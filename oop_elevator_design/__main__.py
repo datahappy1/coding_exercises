@@ -26,7 +26,24 @@ class RequestQueue:
         return self.r_queue
 
 
-class CabinController:
+class BaseController:
+    def __init__(self, requestQueue):
+        self.requestQueue = requestQueue
+        self.requests = []
+
+    def _put_request_to_queue(self, request):
+        self.requestQueue.put(request)
+
+    def update_request(self, request):
+        for idx, item in enumerate(self.requests):
+            if item.requestId == request.requestId:
+                self.requests[idx] = request
+
+    def get_request_status(self, request_id):
+        return [req.requestStatus for req in self.requests if req.requestId == request_id]
+
+
+class CabinController(BaseController):
     @staticmethod
     def _evaluate_direction_from_params(currentFloor, requestedFloor):
         if currentFloor == requestedFloor:
@@ -36,6 +53,7 @@ class CabinController:
         return 'up'
 
     def __init__(self, requestQueue):
+        super().__init__(requestQueue)
         self.requestQueue = requestQueue
         self.requests = []
 
@@ -52,20 +70,10 @@ class CabinController:
         self.requests.append(request)
         return request.requestId
 
-    def _put_request_to_queue(self, request):
-        self.requestQueue.put(request)
 
-    def update_request(self, request):
-        for idx, item in enumerate(self.requests):
-            if item.requestId == request.requestId:
-                self.requests[idx] = request
-
-    def get_request_status(self, request_id):
-        return [req.requestStatus for req in self.requests if req.requestId == request_id]
-
-
-class HallController:
+class HallController(BaseController):
     def __init__(self, requestQueue):
+        super().__init__(requestQueue)
         self.requestQueue = requestQueue
         self.requests = []
 
@@ -79,17 +87,6 @@ class HallController:
         self._put_request_to_queue(request)
         self.requests.append(request)
         return request.requestId
-
-    def _put_request_to_queue(self, request):
-        self.requestQueue.put(request)
-
-    def update_request(self, request):
-        for idx, item in enumerate(self.requests):
-            if item.requestId == request.request_id:
-                self.requests[idx] = request
-
-    def get_request_status(self, request_id):
-        return [req.requestStatus for req in self.requests if req.requestId == request_id]
 
 
 class CabinRequestProcessor:
@@ -114,7 +111,8 @@ class CabinRequestProcessor:
                       f"one move {_request.requestedDirection} to get to requester direction")
                 self.move_cabin_one_floor_in_provided_direction(direction=_request.requestedDirection)
 
-            if not _request.requestedFloor:
+            if _request.requestedFloor is None:
+                print(f"waiting for cabin controller request")
                 _request.requestStatus = "done"
                 break
 
@@ -144,5 +142,13 @@ request_processor.process_requests_from_queue()
 print(cabin_controller.get_request_status(request_id))
 
 request_id = cabin_controller.create_request_to_ride_to_floor_number(currentFloor=4, requestedFloor=3)
+request_processor.process_requests_from_queue()
+print(cabin_controller.get_request_status(request_id))
+
+request_id = hall_controller.create_request_to_ride_to_direction(currentFloor=3, direction='down')
+request_processor.process_requests_from_queue()
+print(hall_controller.get_request_status(request_id))
+
+request_id = cabin_controller.create_request_to_ride_to_floor_number(currentFloor=3, requestedFloor=0)
 request_processor.process_requests_from_queue()
 print(cabin_controller.get_request_status(request_id))
