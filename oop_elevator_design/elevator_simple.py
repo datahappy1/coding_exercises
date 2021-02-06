@@ -72,15 +72,15 @@ class CabinController(BaseController):
         self.cabin_state = cabin_state
         self.requests = []
 
-    def create_request_for_ride_to_floor_number(self, requested_to_floor):
+    def create_request_for_ride(self, floor):
         requested_from_floor = self.cabin_state.get_current_floor()
 
         request = CabinRequest(request_id=str(uuid4()),
                                request_status='submitted',
                                request_type="cabin",
-                               requested_to_floor=requested_to_floor,
+                               requested_to_floor=floor,
                                requested_direction=CabinController._eval_direction(requested_from_floor,
-                                                                                   requested_to_floor),
+                                                                                   floor),
                                requested_from_floor=requested_from_floor)
 
         return request
@@ -92,11 +92,11 @@ class HallController(BaseController):
         self.cabin_state = cabin_state
         self.requests = []
 
-    def create_request_for_ride(self, requested_from_floor):
+    def create_request_for_ride(self, floor):
         request = HallRequest(request_id=str(uuid4()),
                               request_status='submitted',
                               request_type="hall",
-                              requested_from_floor=requested_from_floor)
+                              requested_from_floor=floor)
 
         return request
 
@@ -160,32 +160,34 @@ cabin_controller = CabinController(cabin_state)
 request_processor = RequestProcessor(cabin_state, hall_controller, cabin_controller)
 
 
-def elevator_hall_button_push_button(requested_from_floor):
-    request = hall_controller.create_request_for_ride(requested_from_floor=requested_from_floor)
-    hall_controller.register_request(request)
+def _elevator_button_push_button(controller, floor):
+    request = controller.create_request_for_ride(floor=floor)
+    controller.register_request(request)
     request_processor.process_request(request)
     return request.requestId
+
+
+def _elevator_button_show_status(controller, request_id):
+    request_status = controller.get_request_status(request_id)
+    controller.delete_request(request_id)
+    print(request_status)
+    return
+
+
+def elevator_hall_button_push_button(requested_from_floor):
+    return _elevator_button_push_button(hall_controller, floor = requested_from_floor)
 
 
 def elevator_hall_button_show_status(request_id):
-    request_status = hall_controller.get_request_status(request_id)
-    hall_controller.delete_request(request_id)
-    print(request_status)
-    return
+    return _elevator_button_show_status(hall_controller, request_id)
 
 
 def elevator_cabin_button_push_button(requested_to_floor):
-    request = cabin_controller.create_request_for_ride_to_floor_number(requested_to_floor=requested_to_floor)
-    cabin_controller.register_request(request)
-    request_processor.process_request(request)
-    return request.requestId
+    return _elevator_button_push_button(cabin_controller, floor = requested_to_floor)
 
 
 def elevator_cabin_button_show_status(request_id):
-    request_status = cabin_controller.get_request_status(request_id)
-    cabin_controller.delete_request(request_id)
-    print(request_status)
-    return
+    return _elevator_button_show_status(cabin_controller, request_id)
 
 
 request_id = elevator_hall_button_push_button(requested_from_floor=2)
