@@ -1,15 +1,14 @@
 from uuid import uuid4
-from queue import Queue
 
 
 class CabinState:
     def __init__(self):
         self.currentFloor = 0
 
-    def add_floor_to_current_floor(self):
+    def add_one_floor(self):
         self.currentFloor += 1
 
-    def subtract_floor_from_current_floor(self):
+    def subtract_one_floor(self):
         self.currentFloor -= 1
 
     def get_current_floor(self):
@@ -18,30 +17,30 @@ class CabinState:
 
 class Request:
     def __init__(self, request_id, request_status, requested_from_floor, request_type,
-                 requested_floor=None, requested_direction=None):
+                 requested_to_floor=None, requested_direction=None):
         self.requestId = request_id
         self.requestStatus = request_status
         self.requestedFromFloor = requested_from_floor
         self.requestType = request_type
-        self.requestedFloor = requested_floor
+        self.requestedToFloor = requested_to_floor
         self.requestedDirection = requested_direction
 
 
-class RequestQueue:
-    def __init__(self):
-        self.r_queue = Queue()
+class HallRequest(Request):
+    def __init__(self, request_id, request_status, requested_from_floor, request_type):
+        super().__init__(request_id, request_status, requested_from_floor, request_type)
 
-    def qet_queue_object(self):
-        return self.r_queue
+
+class CabinRequest(Request):
+    def __init__(self, request_id, request_status, requested_from_floor, request_type,
+                 requested_to_floor, requested_direction):
+        super().__init__(request_id, request_status, requested_from_floor, request_type,
+                         requested_to_floor, requested_direction)
 
 
 class BaseController:
-    def __init__(self, request_queue):
-        self.requestQueue = request_queue
+    def __init__(self):
         self.requests = []
-
-    def _put_request_to_queue(self, request):
-        self.requestQueue.put(request)
 
     def update_request(self, request):
         for idx, item in enumerate(self.requests):
@@ -54,65 +53,57 @@ class BaseController:
                 self.requests.pop(idx)
 
     def get_request_status(self, request_id):
-        return [{request.requestId, request.requestStatus} for request in self.requests
+        return [request.requestStatus for request in self.requests
                 if request.requestId == request_id]
 
     def register_request(self, request):
-        self._put_request_to_queue(request)
         self.requests.append(request)
 
 
 class CabinController(BaseController):
     @staticmethod
-    def _evaluate_direction_from_params(requested_from_floor, requested_floor):
-        if requested_from_floor == requested_floor:
-            pass
-        if requested_from_floor > requested_floor:
+    def _eval_direction(requested_from_floor, requested_to_floor):
+        if requested_from_floor > requested_to_floor:
             return 'down'
         return 'up'
 
-    def __init__(self, request_queue, cabin_state):
-        super().__init__(request_queue)
-        self.requestQueue = request_queue
+    def __init__(self, cabin_state):
+        super().__init__()
         self.cabin_state = cabin_state
         self.requests = []
 
-    def create_request_to_ride_to_floor_number(self, requested_floor):
+    def create_request_for_ride_to_floor_number(self, requested_to_floor):
         requested_from_floor = self.cabin_state.get_current_floor()
 
-        request = Request(request_id=str(uuid4()),
-                          request_status='submitted',
-                          request_type="cabin",
-                          requested_floor=requested_floor,
-                          requested_direction=CabinController._evaluate_direction_from_params(requested_from_floor,
-                                                                                              requested_floor),
-                          requested_from_floor=requested_from_floor)
+        request = CabinRequest(request_id=str(uuid4()),
+                               request_status='submitted',
+                               request_type="cabin",
+                               requested_to_floor=requested_to_floor,
+                               requested_direction=CabinController._eval_direction(requested_from_floor,
+                                                                                   requested_to_floor),
+                               requested_from_floor=requested_from_floor)
 
         return request
 
 
 class HallController(BaseController):
-    def __init__(self, request_queue, cabin_state):
-        super().__init__(request_queue)
-        self.requestQueue = request_queue
+    def __init__(self, cabin_state):
+        super().__init__()
         self.cabin_state = cabin_state
         self.requests = []
 
-    def create_request_to_ride(self, requested_from_floor):
-        request = Request(request_id=str(uuid4()),
-                          request_status='submitted',
-                          request_type="hall",
-                          requested_floor=None,
-                          requested_direction=None,
-                          requested_from_floor=requested_from_floor)
+    def create_request_for_ride(self, requested_from_floor):
+        request = HallRequest(request_id=str(uuid4()),
+                              request_status='submitted',
+                              request_type="hall",
+                              requested_from_floor=requested_from_floor)
 
         return request
 
 
 class RequestProcessor:
-    def __init__(self, request_queue, cabin_state, hall_controller, cabin_controller):
+    def __init__(self, cabin_state, hall_controller, cabin_controller):
         self.cabin_state = cabin_state
-        self.request_queue = request_queue
         self.hall_controller = hall_controller
         self.cabin_controller = cabin_controller
 
@@ -121,24 +112,24 @@ class RequestProcessor:
 
     def move_cabin_one_floor_in_provided_direction(self, direction):
         if direction == "up":
-            self.cabin_state.add_floor_to_current_floor()
+            self.cabin_state.add_one_floor()
         elif direction == "down":
-            self.cabin_state.subtract_floor_from_current_floor()
+            self.cabin_state.subtract_one_floor()
+
+    def process_movement_in_direction(self, request, direction):
+        self.move_cabin_one_floor_in_provided_direction(direction=direction)
+        request.requestStatus = "in progress"
+        hall_controller.update_request(request)
+        self.report_on_request(request)
 
     def process_hall_request(self, request):
-        def _process_movement_in_direction(direction):
-            self.move_cabin_one_floor_in_provided_direction(direction=direction)
-            request.requestStatus = "in progress"
-            hall_controller.update_request(request)
-            self.report_on_request(request)
-
         if self.cabin_state.currentFloor > request.requestedFromFloor:
             while self.cabin_state.currentFloor != request.requestedFromFloor:
-                _process_movement_in_direction(direction="down")
+                self.process_movement_in_direction(request=request, direction="down")
 
         elif self.cabin_state.currentFloor < request.requestedFromFloor:
             while self.cabin_state.currentFloor != request.requestedFromFloor:
-                _process_movement_in_direction(direction="up")
+                self.process_movement_in_direction(request=request, direction="up")
 
         elif self.cabin_state.currentFloor == request.requestedFromFloor:
             pass
@@ -147,70 +138,73 @@ class RequestProcessor:
         self.report_on_request(request)
 
     def process_cabin_request(self, request):
-        while self.cabin_state.currentFloor != request.requestedFloor:
-            self.move_cabin_one_floor_in_provided_direction(direction=request.requestedDirection)
-            cabin_controller.update_request(request)
-            request.requestStatus = "in progress"
-            self.report_on_request(request)
+        while self.cabin_state.currentFloor != request.requestedToFloor:
+            self.process_movement_in_direction(request=request, direction=request.requestedDirection)
+
         request.requestStatus = "done"
         self.report_on_request(request)
 
-    def process_requests_from_queue(self):
-        while self.request_queue.qsize() > 0:
-            processed_request = self.request_queue.get()
-            self.report_on_request(processed_request)
+    def process_request(self, request):
+        processed_request = request
+        self.report_on_request(processed_request)
 
-            if processed_request.requestType == "hall":
-                self.process_hall_request(processed_request)
-            if processed_request.requestType == "cabin":
-                self.process_cabin_request(processed_request)
+        if processed_request.requestType == "hall":
+            self.process_hall_request(processed_request)
+        if processed_request.requestType == "cabin":
+            self.process_cabin_request(processed_request)
 
 
-queue = RequestQueue().qet_queue_object()
 cabin_state = CabinState()
+hall_controller = HallController(cabin_state)
+cabin_controller = CabinController(cabin_state)
+request_processor = RequestProcessor(cabin_state, hall_controller, cabin_controller)
 
-hall_controller = HallController(queue, cabin_state)
-cabin_controller = CabinController(queue, cabin_state)
-request_processor = RequestProcessor(queue, cabin_state, hall_controller, cabin_controller)
 
-request = hall_controller.create_request_to_ride(requested_from_floor=2)
-hall_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(hall_controller.get_request_status(request.requestId))
-hall_controller.delete_request(request.requestId)
+def elevator_hall_button_push_button(requested_from_floor):
+    request = hall_controller.create_request_for_ride(requested_from_floor=requested_from_floor)
+    hall_controller.register_request(request)
+    request_processor.process_request(request)
+    return request.requestId
 
-request = cabin_controller.create_request_to_ride_to_floor_number(requested_floor=4)
-cabin_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(cabin_controller.get_request_status(request.requestId))
-cabin_controller.delete_request(request.requestId)
 
-request = hall_controller.create_request_to_ride(requested_from_floor=0)
-hall_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(hall_controller.get_request_status(request.requestId))
-hall_controller.delete_request(request.requestId)
+def elevator_hall_button_show_status(request_id):
+    request_status = hall_controller.get_request_status(request_id)
+    hall_controller.delete_request(request_id)
+    print(request_status)
+    return
 
-request = cabin_controller.create_request_to_ride_to_floor_number(requested_floor=5)
-cabin_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(cabin_controller.get_request_status(request.requestId))
-cabin_controller.delete_request(request.requestId)
 
-request = cabin_controller.create_request_to_ride_to_floor_number(requested_floor=3)
-cabin_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(cabin_controller.get_request_status(request.requestId))
-cabin_controller.delete_request(request.requestId)
+def elevator_cabin_button_push_button(requested_to_floor):
+    request = cabin_controller.create_request_for_ride_to_floor_number(requested_to_floor=requested_to_floor)
+    cabin_controller.register_request(request)
+    request_processor.process_request(request)
+    return request.requestId
 
-request = hall_controller.create_request_to_ride(requested_from_floor=3)
-hall_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(hall_controller.get_request_status(request.requestId))
-hall_controller.delete_request(request.requestId)
 
-request = cabin_controller.create_request_to_ride_to_floor_number(requested_floor=0)
-cabin_controller.register_request(request)
-request_processor.process_requests_from_queue()
-print(cabin_controller.get_request_status(request.requestId))
-cabin_controller.delete_request(request.requestId)
+def elevator_cabin_button_show_status(request_id):
+    request_status = cabin_controller.get_request_status(request_id)
+    cabin_controller.delete_request(request_id)
+    print(request_status)
+    return
+
+
+request_id = elevator_hall_button_push_button(requested_from_floor=2)
+elevator_hall_button_show_status(request_id)
+
+request_id = elevator_cabin_button_push_button(requested_to_floor=4)
+elevator_cabin_button_show_status(request_id)
+
+request_id = elevator_hall_button_push_button(requested_from_floor=0)
+elevator_hall_button_show_status(request_id)
+
+request_id = elevator_cabin_button_push_button(requested_to_floor=5)
+elevator_cabin_button_show_status(request_id)
+
+request_id = elevator_cabin_button_push_button(requested_to_floor=3)
+elevator_cabin_button_show_status(request_id)
+
+request_id = elevator_hall_button_push_button(requested_from_floor=3)
+elevator_hall_button_show_status(request_id)
+
+request_id = elevator_cabin_button_push_button(requested_to_floor=0)
+elevator_cabin_button_show_status(request_id)
