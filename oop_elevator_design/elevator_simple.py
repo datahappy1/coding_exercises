@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 
-class CabinState:
+class Cabin:
     def __init__(self):
         self.currentFloor = 0
 
@@ -107,7 +107,7 @@ class RequestProcessor:
         self.hall_controller = hall_controller
         self.cabin_controller = cabin_controller
 
-    def report_on_request(self, request):
+    def print_request_status(self, request):
         print(f"cabin state: {vars(self.cabin_state)}, request: {vars(request)}")
 
     def move_cabin_one_floor_in_provided_direction(self, direction):
@@ -116,37 +116,43 @@ class RequestProcessor:
         elif direction == "down":
             self.cabin_state.subtract_one_floor()
 
-    def process_movement_in_direction(self, request, direction):
+    def process_movement_in_direction(self, controller, request, direction):
         self.move_cabin_one_floor_in_provided_direction(direction=direction)
         request.requestStatus = "in progress"
-        hall_controller.update_request(request)
-        self.report_on_request(request)
+        controller.update_request(request)
+        self.print_request_status(request)
 
     def process_hall_request(self, request):
         if self.cabin_state.currentFloor > request.requestedFromFloor:
             while self.cabin_state.currentFloor != request.requestedFromFloor:
-                self.process_movement_in_direction(request=request, direction="down")
+                self.process_movement_in_direction(controller=self.hall_controller,
+                                                   request=request,
+                                                   direction="down")
 
         elif self.cabin_state.currentFloor < request.requestedFromFloor:
             while self.cabin_state.currentFloor != request.requestedFromFloor:
-                self.process_movement_in_direction(request=request, direction="up")
+                self.process_movement_in_direction(controller=self.hall_controller,
+                                                   request=request,
+                                                   direction="up")
 
         elif self.cabin_state.currentFloor == request.requestedFromFloor:
             pass
 
         request.requestStatus = "done"
-        self.report_on_request(request)
+        self.print_request_status(request)
 
     def process_cabin_request(self, request):
         while self.cabin_state.currentFloor != request.requestedToFloor:
-            self.process_movement_in_direction(request=request, direction=request.requestedDirection)
+            self.process_movement_in_direction(controller=self.cabin_controller,
+                                               request=request,
+                                               direction=request.requestedDirection)
 
         request.requestStatus = "done"
-        self.report_on_request(request)
+        self.print_request_status(request)
 
     def process_request(self, request):
         processed_request = request
-        self.report_on_request(processed_request)
+        self.print_request_status(processed_request)
 
         if processed_request.requestType == "hall":
             self.process_hall_request(processed_request)
@@ -154,7 +160,7 @@ class RequestProcessor:
             self.process_cabin_request(processed_request)
 
 
-cabin_state = CabinState()
+cabin_state = Cabin()
 hall_controller = HallController(cabin_state)
 cabin_controller = CabinController(cabin_state)
 request_processor = RequestProcessor(cabin_state, hall_controller, cabin_controller)
@@ -175,7 +181,7 @@ def _elevator_button_show_status(controller, request_id):
 
 
 def elevator_hall_button_push_button(requested_from_floor):
-    return _elevator_button_push_button(hall_controller, floor = requested_from_floor)
+    return _elevator_button_push_button(hall_controller, floor=requested_from_floor)
 
 
 def elevator_hall_button_show_status(request_id):
@@ -183,7 +189,7 @@ def elevator_hall_button_show_status(request_id):
 
 
 def elevator_cabin_button_push_button(requested_to_floor):
-    return _elevator_button_push_button(cabin_controller, floor = requested_to_floor)
+    return _elevator_button_push_button(cabin_controller, floor=requested_to_floor)
 
 
 def elevator_cabin_button_show_status(request_id):
