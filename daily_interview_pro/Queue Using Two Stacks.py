@@ -21,11 +21,15 @@ class Queue:
         self.stack2 = deepcopy(self.stack1)
 
         if self.stack2:
-            dequeued_item = self.stack2[self.dequeue_i]
+            try:
+                dequeued_item = self.stack2[self.dequeue_i]
+            except IndexError:
+                return None
             self.stack2 = self.stack2[self.dequeue_i:]
             self.dequeue_i += 1
             return dequeued_item
-
+        else:
+            return None
 
 q = Queue()
 q.enqueue(1)
@@ -36,6 +40,7 @@ print(q.dequeue())
 print(q.dequeue())
 print(q.dequeue())
 print(q.dequeue())
+
 # 1 2 3 4
 
 
