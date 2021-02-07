@@ -19,11 +19,12 @@ class Queue:
     def dequeue(self):
         # Fill this in.
         self.stack2 = deepcopy(self.stack1)
+
         if self.stack2:
-            popped_item = self.stack2[self.dequeue_i]
-            self.stack2.pop(self.dequeue_i)
+            dequeued_item = self.stack2[self.dequeue_i]
+            self.stack2 = self.stack2[self.dequeue_i:]
             self.dequeue_i += 1
-            return popped_item
+            return dequeued_item
 
 
 q = Queue()
@@ -35,7 +36,7 @@ print(q.dequeue())
 print(q.dequeue())
 print(q.dequeue())
 print(q.dequeue())
-# 1 2 3
+# 1 2 3 4
 
 
 
