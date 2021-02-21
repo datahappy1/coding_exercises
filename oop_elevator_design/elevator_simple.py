@@ -175,7 +175,8 @@ def _elevator_button_push_button(controller, floor):
 
 def _elevator_button_show_status(controller, request_id):
     request_status = controller.get_request_status(request_id)
-    controller.delete_request(request_id)
+    if request_status == "done":
+        controller.delete_request(request_id)
     print(request_status)
     return
 
