@@ -87,9 +87,8 @@ class CabinController(BaseController):
 
 
 class HallController(BaseController):
-    def __init__(self, cabin_state):
+    def __init__(self):
         super().__init__()
-        self.cabin_state = cabin_state
         self.requests = []
 
     def create_request_for_ride(self, floor):
@@ -102,8 +101,8 @@ class HallController(BaseController):
 
 
 class RequestProcessor:
-    def __init__(self, cabin_state, hall_controller, cabin_controller):
-        self.cabin_state = cabin_state
+    def __init__(self, hall_controller, cabin_controller):
+        self.cabin_state = cabin_controller.cabin_state
         self.hall_controller = hall_controller
         self.cabin_controller = cabin_controller
 
@@ -159,11 +158,9 @@ class RequestProcessor:
         if processed_request.requestType == "cabin":
             self.process_cabin_request(processed_request)
 
-
-cabin_state = Cabin()
-hall_controller = HallController(cabin_state)
-cabin_controller = CabinController(cabin_state)
-request_processor = RequestProcessor(cabin_state, hall_controller, cabin_controller)
+hall_controller = HallController()
+cabin_controller = CabinController(cabin_state=Cabin())
+request_processor = RequestProcessor(hall_controller, cabin_controller)
 
 
 def _elevator_button_push_button(controller, floor):
