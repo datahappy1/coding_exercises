@@ -101,8 +101,8 @@ class HallController(BaseController):
 
 
 class RequestProcessor:
-    def __init__(self, hall_controller, cabin_controller):
-        self.cabin_state = cabin_controller.cabin_state
+    def __init__(self, cabin, hall_controller, cabin_controller):
+        self.cabin_state = cabin
         self.hall_controller = hall_controller
         self.cabin_controller = cabin_controller
 
@@ -158,9 +158,11 @@ class RequestProcessor:
         if processed_request.requestType == "cabin":
             self.process_cabin_request(processed_request)
 
+
+cabin = Cabin()
 hall_controller = HallController()
-cabin_controller = CabinController(cabin_state=Cabin())
-request_processor = RequestProcessor(hall_controller, cabin_controller)
+cabin_controller = CabinController(cabin)
+request_processor = RequestProcessor(cabin, hall_controller, cabin_controller)
 
 
 def _elevator_button_push_button(controller, floor):
@@ -170,11 +172,11 @@ def _elevator_button_push_button(controller, floor):
     return request.requestId
 
 
-def _elevator_button_show_status(controller, request_id):
-    request_status = controller.get_request_status(request_id)
+def _elevator_button_show_status(controller, param_request_id):
+    request_status = controller.get_request_status(param_request_id)
     print(request_status)
     if request_status == "done":
-        controller.delete_request(request_id)
+        controller.delete_request(param_request_id)
     return
 
 
@@ -182,16 +184,16 @@ def elevator_hall_button_push_button(requested_from_floor):
     return _elevator_button_push_button(hall_controller, floor=requested_from_floor)
 
 
-def elevator_hall_button_show_status(request_id):
-    return _elevator_button_show_status(hall_controller, request_id)
+def elevator_hall_button_show_status(param_request_id):
+    return _elevator_button_show_status(hall_controller, param_request_id)
 
 
 def elevator_cabin_button_push_button(requested_to_floor):
     return _elevator_button_push_button(cabin_controller, floor=requested_to_floor)
 
 
-def elevator_cabin_button_show_status(request_id):
-    return _elevator_button_show_status(cabin_controller, request_id)
+def elevator_cabin_button_show_status(param_request_id):
+    return _elevator_button_show_status(cabin_controller, param_request_id)
 
 
 request_id = elevator_hall_button_push_button(requested_from_floor=2)
