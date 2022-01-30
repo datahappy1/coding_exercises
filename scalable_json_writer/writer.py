@@ -30,25 +30,26 @@ def get_random_number(min_value, max_value):
 
 
 def json_data_generator(item_count):
-    def _transform_data(data):
-        _base_string = f'"{data[0]}": {data[1]}'
-        if item_count - 1 == i:
-            return _base_string + os.linesep
-        return _base_string + "," + os.linesep
+    generate_row_count = item_count - 1
+
+    def _transform_item_data(data):
+        return data + os.linesep if generate_row_count == i else data + "," + os.linesep
+
+    def _construct_item():
+        constructed_item = Item()
+        constructed_item.id = get_id()
+        constructed_item.name = get_random_item_from_list(items=NAMES)
+        constructed_item.age = get_random_number(0, 100)
+        return constructed_item
 
     i = 0
     while i < item_count:
-        generated_item = Item()
-        generated_item.id = get_id()
-        generated_item.name = get_random_item_from_list(items=NAMES)
-        generated_item.age = get_random_number(0, 100)
-
-        yield _transform_data((generated_item.id, json.dumps(generated_item.__dict__)))
+        yield _transform_item_data(json.dumps(_construct_item().__dict__))
         i += 1
 
 
 with open(OUTPUT_FILE_PATH, mode="w") as f:
-    f.write("{")
+    f.write("[")
     for item in json_data_generator(item_count=GENERATED_ITEM_COUNT):
         f.write(item)
-    f.write("}")
+    f.write("]")
