@@ -9,7 +9,7 @@
 from typing import Optional, Set
 
 sequence = [8, 10, 2, 9, 7, 5]
-target = 12
+target = 14
 
 
 def pair_value_finder(input_list: [], target_value: int) -> Set[Optional[tuple]]:
