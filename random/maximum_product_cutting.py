@@ -6,73 +6,86 @@
 # let target_value = 5
 # returns [2, 3] -> 6
 # */
+from typing import List
 
-target_value = 10
-results = dict()
+ROPE_LENGTH_VALUE = 30
+TEMP_RESULTS = dict()
 
-
-def generate_root_values_split(target_value_param: int):
-    for item in range(1, target_value_param):
-        y = target_value_param - item
-        if item <= y:
-            results[item] = [[item, y]]
+SETTINGS_MAX_RECURSION_COUNT = 5
 
 
-def split_value_recursive(input_value1: int, input_value2: int):
-    if input_value2 > 1:
-        last_item = results[input_value1][-1].copy()
-        last_item_max_value = max(last_item)
-        last_item.remove(last_item_max_value)
-        last_item.extend([last_item_max_value - 1, 1])
-        results[input_value1].append(last_item)
-        split_value_recursive(input_value1, input_value2 - 1)
+def generate_root_values_split(target_value_param: int) -> None:
+    for key in range(1, target_value_param):
+        value = target_value_param - key
+        if key <= value:
+            TEMP_RESULTS[key] = [[key, value]]
 
 
-def split_values():
-    for k, v in results.items():
-        split_value_recursive(v[0][0], v[0][1])
+def split_values(input_value1: int, input_value2: int) -> None:
+    def _split_value_recursive(_input_value1: int, _input_value2: int) -> None:
+        if _input_value2 > 1:
+            last_item = TEMP_RESULTS[input_value1][-1].copy()
+            last_item_max_value = max(last_item)
+            last_item.remove(last_item_max_value)
+            last_item.extend([last_item_max_value - 1, 1])
+            TEMP_RESULTS[input_value1].append(last_item)
+            _split_value_recursive(_input_value1, _input_value2 - 1)
 
-    for k, v in results.items():
-        for i in v:
-            count_of_ones = len([u for u in i if u == 1])
+    _split_value_recursive(input_value1, input_value2)
+
+    for key, value in TEMP_RESULTS.items():
+        for result_item in value:
+            count_of_ones = len([u for u in result_item if u == 1])
             if count_of_ones > 1:
-                while 1 in i:
-                    i.remove(1)
-                i.append(count_of_ones)
+                while 1 in result_item:
+                    result_item.remove(1)
+                result_item.append(count_of_ones)
 
 
-def filter_results():
-    for v in results.values():
-        for iv in v:
-            if len(iv) == 1:
-                v.remove(iv)
+def generate_values_split() -> None:
+    i = 0
+    while True:
+        for key, value in TEMP_RESULTS.items():
+            split_values(value[0][0], value[0][1])
+        i += 1
+        if i == SETTINGS_MAX_RECURSION_COUNT:
+            break
 
 
-def deduplicate_results_by_multiplied_value():
-    def _multiply(numbers):
+def filter_results() -> None:
+    for value in TEMP_RESULTS.values():
+        for result_item in value:
+            # You must make at least one cut.
+            if len(result_item) == 1:
+                value.remove(result_item)
+
+
+def deduplicate_results_by_multiplied_value() -> List[dict]:
+    def _multiply(numbers: List[int]) -> int:
         a = 1
         for num in numbers:
             a *= num
         return a
 
-    deduped_results, multiplied_seen_results = [], set()
-    for key, val in results.items():
-        for i in val:
-            multiplied_item = _multiply(i)
-            if multiplied_item in multiplied_seen_results:
+    deduplicated_results, multiplied_seen_results = [], set()
+    for key, value in TEMP_RESULTS.items():
+        for result_item in value:
+            multiplied_list_items = _multiply(result_item)
+            if multiplied_list_items in multiplied_seen_results:
                 continue
-            multiplied_seen_results.add(multiplied_item)
-            deduped_results.append({'key': i, 'value': multiplied_item})
-    return deduped_results
+            multiplied_seen_results.add(multiplied_list_items)
+            deduplicated_results.append({"key": result_item, "value": multiplied_list_items})
+
+    return deduplicated_results
 
 
-def format_results(deduplicated_results):
-    deduplicated_results.sort(key=lambda e: e['value'], reverse=True)
+def print_sorted_results(deduplicated_results) -> None:
+    deduplicated_results.sort(key=lambda e: e["value"], reverse=True)
     for sorted_item in deduplicated_results:
         print(f"{sorted_item['key']} -> {sorted_item['value']}")
 
 
-generate_root_values_split(target_value)
-split_values()
+generate_root_values_split(ROPE_LENGTH_VALUE)
+generate_values_split()
 filter_results()
-format_results(deduplicate_results_by_multiplied_value())
+print_sorted_results(deduplicate_results_by_multiplied_value())
