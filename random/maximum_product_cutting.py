@@ -49,8 +49,8 @@ def transform_base_dataset(base_dataset_param: List[List]) -> dict:
 
 def generate_results(base_dataset_transformed_param: dict) -> List[List]:
     data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE].copy()
-    for data_item in data:
-        for key, value in base_dataset_transformed_param.items():
+    for key, value in base_dataset_transformed_param.items():
+        for data_item in data:
             for value_item in value:
                 data_item_max_value = max(data_item)
                 if sum(value_item) == data_item_max_value:
