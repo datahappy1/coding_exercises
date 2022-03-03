@@ -6,61 +6,63 @@
 # let target_value = 5
 # returns [2, 3] -> 6
 # */
+
 from typing import List
 
-ROPE_LENGTH_VALUE = 30
-TEMP_RESULTS = dict()
-
-SETTINGS_MAX_RECURSION_COUNT = 5
+TARGET_ROPE_LENGTH_VALUE = 15
 
 
-def generate_root_values_split(target_value_param: int) -> None:
-    for key in range(1, target_value_param):
-        value = target_value_param - key
-        if key <= value:
-            TEMP_RESULTS[key] = [[key, value]]
+def generate_base_dataset(value_param: int):
+    def _generate_root_values_split(target_value_param: int) -> List:
+        _results = []
+        for val in range(1, target_value_param):
+            diff_val = target_value_param - val
+            if val <= diff_val:
+                _results.append([val, diff_val])
+        yield _results
+
+    if value_param <= 1:
+        raise ValueError("TARGET_ROPE_LENGTH_VALUE value has to be > 1")
+
+    results = [[]]
+    iteration = 0
+    while iteration < value_param:
+        try:
+            _value_param = max(results[iteration][0])
+        except IndexError:
+            _value_param = value_param
+        results.extend([val for val in _generate_root_values_split(target_value_param=_value_param)])
+        iteration += 1
+
+    return results
 
 
-def split_values(input_value1: int, input_value2: int) -> None:
-    def _split_value_recursive(_input_value1: int, _input_value2: int) -> None:
-        if _input_value2 > 1:
-            last_item = TEMP_RESULTS[input_value1][-1].copy()
-            last_item_max_value = max(last_item)
-            last_item.remove(last_item_max_value)
-            last_item.extend([last_item_max_value - 1, 1])
-            TEMP_RESULTS[input_value1].append(last_item)
-            _split_value_recursive(_input_value1, _input_value2 - 1)
+def transform_base_dataset(base_dataset_param: List[List]) -> dict:
+    results = dict()
+    for item in enumerate(base_dataset_param):
+        if item[1]:
+            s = sum([val for val in item[1][0]])
+            results[s] = item[1]
 
-    _split_value_recursive(input_value1, input_value2)
-
-    for key, value in TEMP_RESULTS.items():
-        for result_item in value:
-            count_of_ones = len([u for u in result_item if u == 1])
-            if count_of_ones > 1:
-                while 1 in result_item:
-                    result_item.remove(1)
-                result_item.append(count_of_ones)
+    return results
 
 
-def generate_values_split() -> None:
-    i = 0
-    while True:
-        for key, value in TEMP_RESULTS.items():
-            split_values(value[0][0], value[0][1])
-        i += 1
-        if i == SETTINGS_MAX_RECURSION_COUNT:
-            break
+def generate_results(base_dataset_transformed_param: dict) -> List[List]:
+    data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE].copy()
+    for data_item in data:
+        for key, value in base_dataset_transformed_param.items():
+            for value_item in value:
+                data_item_max_value = max(data_item)
+                if sum(value_item) == data_item_max_value:
+                    new_item = data_item.copy()
+                    new_item.remove(data_item_max_value)
+                    for leaf_value_item in value_item:
+                        new_item.append(leaf_value_item)
+                    data.append(new_item)
+    return data
 
 
-def filter_results() -> None:
-    for value in TEMP_RESULTS.values():
-        for result_item in value:
-            # You must make at least one cut.
-            if len(result_item) == 1:
-                value.remove(result_item)
-
-
-def deduplicate_results_by_multiplied_value() -> List[dict]:
+def deduplicate_results_by_multiplied_value(generated_results_param: List[List]) -> List[dict]:
     def _multiply(numbers: List[int]) -> int:
         a = 1
         for num in numbers:
@@ -68,13 +70,12 @@ def deduplicate_results_by_multiplied_value() -> List[dict]:
         return a
 
     deduplicated_results, multiplied_seen_results = [], set()
-    for key, value in TEMP_RESULTS.items():
-        for result_item in value:
-            multiplied_list_items = _multiply(result_item)
-            if multiplied_list_items in multiplied_seen_results:
-                continue
-            multiplied_seen_results.add(multiplied_list_items)
-            deduplicated_results.append({"key": result_item, "value": multiplied_list_items})
+    for result_item in generated_results_param:
+        multiplied_list_items = _multiply(result_item)
+        if multiplied_list_items in multiplied_seen_results:
+            continue
+        multiplied_seen_results.add(multiplied_list_items)
+        deduplicated_results.append({"key": result_item, "value": multiplied_list_items})
 
     return deduplicated_results
 
@@ -85,7 +86,9 @@ def print_sorted_results(deduplicated_results) -> None:
         print(f"{sorted_item['key']} -> {sorted_item['value']}")
 
 
-generate_root_values_split(ROPE_LENGTH_VALUE)
-generate_values_split()
-filter_results()
-print_sorted_results(deduplicate_results_by_multiplied_value())
+base_dataset = generate_base_dataset(TARGET_ROPE_LENGTH_VALUE)
+base_dataset_transformed = transform_base_dataset(base_dataset)
+generated_results_data = generate_results(base_dataset_transformed)
+deduplicated_results_data = deduplicate_results_by_multiplied_value(generated_results_data)
+print_sorted_results(deduplicated_results_data)
+
