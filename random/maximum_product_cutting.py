@@ -53,7 +53,7 @@ def generate_results(base_dataset_transformed_param: dict) -> List[List]:
         for data_item in data:
             for value_item in value:
                 data_item_max_value = max(data_item)
-                if sum(value_item) == data_item_max_value:
+                if key == data_item_max_value:
                     new_item = data_item.copy()
                     new_item.remove(data_item_max_value)
                     for leaf_value_item in value_item:
