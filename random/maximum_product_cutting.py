@@ -50,27 +50,25 @@ def transform_base_dataset(base_dataset_param: List[List]) -> dict:
 def generate_results(base_dataset_transformed_param: dict) -> List[List]:
     data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE].copy()
 
-    # print(data)
-    # print(base_dataset_transformed_param)
-    u = 0
+    iter_counter = 0
     for key, value in base_dataset_transformed_param.items():
         for data_item in [item for item in data if item[0] < key]:
             data_item_max_value = max(data_item)
             if key == data_item_max_value:
                 for value_item in value:
-                    u += 1
+                    iter_counter += 1
                     new_item = data_item.copy()
                     new_item.remove(data_item_max_value)
                     for leaf_value_item in value_item:
                         new_item.append(leaf_value_item)
                     data.append(new_item)
 
-    print(u)
+    print(f"{iter_counter} iterations")
 
     return data
 
 
-def deduplicate_results_by_multiplied_value(generated_results_param: List[List]) -> List[dict]:
+def deduplicate_results(generated_results_param: List[List]) -> List[dict]:
     def _multiply(numbers: List[int]) -> int:
         a = 1
         for num in numbers:
@@ -88,7 +86,7 @@ def deduplicate_results_by_multiplied_value(generated_results_param: List[List])
     return deduplicated_results
 
 
-def print_sorted_results(deduplicated_results) -> None:
+def print_sorted_results(deduplicated_results: List[dict]) -> None:
     deduplicated_results.sort(key=lambda e: e["value"], reverse=True)
     for sorted_item in deduplicated_results:
         print(f"{sorted_item['key']} -> {sorted_item['value']}")
@@ -97,5 +95,5 @@ def print_sorted_results(deduplicated_results) -> None:
 base_dataset = generate_base_dataset(TARGET_ROPE_LENGTH_VALUE)
 base_dataset_transformed = transform_base_dataset(base_dataset)
 generated_results_data = generate_results(base_dataset_transformed)
-deduplicated_results_data = deduplicate_results_by_multiplied_value(generated_results_data)
+deduplicated_results_data = deduplicate_results(generated_results_data)
 print_sorted_results(deduplicated_results_data)
