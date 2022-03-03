@@ -49,16 +49,26 @@ def transform_base_dataset(base_dataset_param: List[List]) -> dict:
 
 def generate_results(base_dataset_transformed_param: dict) -> List[List]:
     data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE].copy()
+
+    # print(data)
+    # print(base_dataset_transformed_param)
+    u = 0
     for key, value in base_dataset_transformed_param.items():
         for data_item in data:
-            for value_item in value:
-                data_item_max_value = max(data_item)
-                if key == data_item_max_value:
-                    new_item = data_item.copy()
-                    new_item.remove(data_item_max_value)
-                    for leaf_value_item in value_item:
-                        new_item.append(leaf_value_item)
-                    data.append(new_item)
+            if data_item[0] < key:
+                for value_item in value:
+                    u += 1
+                    # print("di", data_item, max(data_item), key, value_item)
+                    data_item_max_value = max(data_item)
+                    if key == data_item_max_value:
+                        new_item = data_item.copy()
+                        new_item.remove(data_item_max_value)
+                        for leaf_value_item in value_item:
+                            new_item.append(leaf_value_item)
+                        data.append(new_item)
+
+    print(u)
+
     return data
 
 
