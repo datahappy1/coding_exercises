@@ -25,14 +25,16 @@ def generate_base_dataset(value_param: int):
         raise ValueError("TARGET_ROPE_LENGTH_VALUE value has to be > 1")
 
     results = [[]]
-    iteration = 0
-    while iteration < value_param:
+    iter_counter = 0
+    while iter_counter < value_param:
         try:
-            _value_param = max(results[iteration][0])
+            _value_param = max(results[iter_counter][0])
         except IndexError:
             _value_param = value_param
-        results.extend([val for val in _generate_root_values_split(target_value_param=_value_param)])
-        iteration += 1
+        results.extend(
+            [val for val in _generate_root_values_split(target_value_param=_value_param)]
+        )
+        iter_counter += 1
 
     return results
 
@@ -48,7 +50,7 @@ def transform_base_dataset(base_dataset_param: List[List]) -> dict:
 
 
 def generate_results(base_dataset_transformed_param: dict) -> List[List]:
-    data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE].copy()
+    data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE]
 
     iter_counter = 0
     for key, value in base_dataset_transformed_param.items():
