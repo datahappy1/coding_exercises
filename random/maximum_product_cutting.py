@@ -55,11 +55,10 @@ def generate_results(base_dataset_transformed_param: dict) -> List[List]:
     u = 0
     for key, value in base_dataset_transformed_param.items():
         for data_item in [item for item in data if item[0] < key]:
-            for value_item in value:
-                u += 1
-                # print("di", data_item, max(data_item), key, value_item)
-                data_item_max_value = max(data_item)
-                if key == data_item_max_value:
+            data_item_max_value = max(data_item)
+            if key == data_item_max_value:
+                for value_item in value:
+                    u += 1
                     new_item = data_item.copy()
                     new_item.remove(data_item_max_value)
                     for leaf_value_item in value_item:
@@ -100,4 +99,3 @@ base_dataset_transformed = transform_base_dataset(base_dataset)
 generated_results_data = generate_results(base_dataset_transformed)
 deduplicated_results_data = deduplicate_results_by_multiplied_value(generated_results_data)
 print_sorted_results(deduplicated_results_data)
-
