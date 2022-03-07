@@ -12,7 +12,7 @@ from typing import List
 TARGET_ROPE_LENGTH_VALUE = 15
 
 
-def generate_base_dataset(value_param: int):
+def generate_base_dataset():
     def _generate_root_values_split(target_value_param: int) -> List:
         _results = []
         for val in range(1, target_value_param):
@@ -21,16 +21,16 @@ def generate_base_dataset(value_param: int):
                 _results.append([val, diff_val])
         yield _results
 
-    if value_param <= 1:
+    if TARGET_ROPE_LENGTH_VALUE <= 1:
         raise ValueError("TARGET_ROPE_LENGTH_VALUE value has to be > 1")
 
     results = [[]]
     iter_counter = 0
-    while iter_counter < value_param:
+    while iter_counter < TARGET_ROPE_LENGTH_VALUE:
         try:
             _value_param = max(results[iter_counter][0])
         except IndexError:
-            _value_param = value_param
+            _value_param = TARGET_ROPE_LENGTH_VALUE
         results.extend(
             [val for val in _generate_root_values_split(target_value_param=_value_param)]
         )
@@ -50,11 +50,11 @@ def transform_base_dataset(base_dataset_param: List[List]) -> dict:
 
 
 def generate_results(base_dataset_transformed_param: dict) -> List[List]:
-    data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE]
+    base_data = base_dataset_transformed_param[TARGET_ROPE_LENGTH_VALUE]
 
     iter_counter = 0
     for key, value in base_dataset_transformed_param.items():
-        for data_item in [item for item in data if item[0] < key]:
+        for data_item in [item for item in base_data if item[0] < key]:
             data_item_max_value = max(data_item)
             if key == data_item_max_value:
                 for value_item in value:
@@ -63,11 +63,11 @@ def generate_results(base_dataset_transformed_param: dict) -> List[List]:
                     new_item.remove(data_item_max_value)
                     for leaf_value_item in value_item:
                         new_item.append(leaf_value_item)
-                    data.append(new_item)
+                    base_data.append(new_item)
 
     print(f"{iter_counter} iterations")
 
-    return data
+    return base_data
 
 
 def deduplicate_results(generated_results_param: List[List]) -> List[dict]:
@@ -94,7 +94,7 @@ def print_sorted_results(deduplicated_results: List[dict]) -> None:
         print(f"{sorted_item['key']} -> {sorted_item['value']}")
 
 
-base_dataset = generate_base_dataset(TARGET_ROPE_LENGTH_VALUE)
+base_dataset = generate_base_dataset()
 base_dataset_transformed = transform_base_dataset(base_dataset)
 generated_results_data = generate_results(base_dataset_transformed)
 deduplicated_results_data = deduplicate_results(generated_results_data)
