@@ -122,6 +122,9 @@ class RequestProcessor:
 
         hall_controller = getattr(self, hall)
 
+        if hall_controller.floor == cabin_controller.currentFloor:
+            print("no movement needed")
+
         while hall_controller.floor != cabin_controller.currentFloor:
             hall_controller.process_movement_in_direction(request=request)
             cabin_controller.process_movement_in_direction(request=request.transform_to_cabin_request())
@@ -151,7 +154,7 @@ kwargs = dict(
 request_processor = RequestProcessor(**kwargs)
 
 
-def hall_push_button(requested_from_floor, direction):
+def push_hall_button(requested_from_floor, direction):
     request = HallRequest(
         direction=direction,
         requested_from_floor=requested_from_floor
@@ -162,7 +165,7 @@ def hall_push_button(requested_from_floor, direction):
     request_processor.process_hall_request(hall_id, request)
 
 
-def cabin_push_button(requested_from_floor, requested_to_floor):
+def push_cabin_button(requested_from_floor, requested_to_floor):
     request = CabinRequest(
         requested_from_floor=requested_from_floor,
         requested_to_floor=requested_to_floor
@@ -170,10 +173,12 @@ def cabin_push_button(requested_from_floor, requested_to_floor):
     request_processor.process_cabin_request(request)
 
 
-hall_push_button(requested_from_floor=1, direction=Direction.UP)
+push_hall_button(requested_from_floor=1, direction=Direction.UP)
 
-cabin_push_button(requested_from_floor=1, requested_to_floor=3)
+push_hall_button(requested_from_floor=3, direction=Direction.DOWN)
 
-hall_push_button(requested_from_floor=3, direction=Direction.DOWN)
+push_cabin_button(requested_from_floor=3, requested_to_floor=2)
 
-cabin_push_button(requested_from_floor=3, requested_to_floor=1)
+push_hall_button(requested_from_floor=3, direction=Direction.UP)
+
+# push_cabin_button(requested_from_floor=2, requested_to_floor=1)

@@ -10,6 +10,7 @@
 from typing import List
 
 TARGET_ROPE_LENGTH_VALUE = 15
+TOP_RESULT_ROWS_COUNT = 3
 
 
 def generate_base_dataset():
@@ -90,7 +91,7 @@ def deduplicate_results(generated_results_param: List[List]) -> List[dict]:
 
 def print_sorted_results(deduplicated_results: List[dict]) -> None:
     deduplicated_results.sort(key=lambda e: e["value"], reverse=True)
-    for sorted_item in deduplicated_results:
+    for sorted_item in deduplicated_results[0:TOP_RESULT_ROWS_COUNT]:
         print(f"{sorted_item['key']} -> {sorted_item['value']}")
 
 
