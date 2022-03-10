@@ -22,11 +22,12 @@ class RequestStatus(Enum):
 class Request:
     def __init__(
             self,
+            request_type: RequestType,
             requested_to_floor: int,
             requested_from_floor: int
     ):
         self.request_id = str(uuid4())
-        self.request_type = RequestType.CABIN
+        self.request_type = request_type
         self.requested_direction = Request.eval_direction(
             requested_from_floor, requested_to_floor
         )
@@ -138,6 +139,7 @@ request_processor = RequestProcessor(
 
 def push_hall_button(requested_to_floor, requested_from_floor):
     request = Request(
+        request_type=RequestType.HALL,
         requested_to_floor=requested_to_floor,
         requested_from_floor=requested_from_floor
     )
@@ -149,6 +151,7 @@ def push_hall_button(requested_to_floor, requested_from_floor):
 
 def push_cabin_button(requested_to_floor, requested_from_floor):
     request = Request(
+        request_type=RequestType.CABIN,
         requested_to_floor=requested_to_floor,
         requested_from_floor=requested_from_floor
     )
