@@ -1,5 +1,4 @@
 import json
-import os
 from random import randint
 from uuid import uuid4
 

@@ -1,7 +1,7 @@
 import os
 
-LARGE_FILE_PATH = "/home/pavel.prudky/Downloads/Python-3.9.0.tgz"
-TARGET_FILES_TEMP_FOLDER = "/home/pavel.prudky/Desktop/tmp/chunks/"
+LARGE_FILE_PATH = "C:\coding_exercises\scalable_json_writer\\file.json"
+TARGET_FILES_TEMP_FOLDER = "C:\coding_exercises\scalable_file_splitter"
 CHUNK_BYTE_SIZE = 1024 * 50
 
 
