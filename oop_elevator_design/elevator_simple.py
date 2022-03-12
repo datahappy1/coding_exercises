@@ -41,7 +41,7 @@ class Request:
         )
         self.requested_to_floor = requested_to_floor
         self.requested_from_floor = requested_from_floor
-        self.request_status = RequestStatus.SUBMITTED
+        self.request_status = None
 
     def update_request_status(self, status: RequestStatus) -> None:
         self.request_status = status
@@ -60,8 +60,6 @@ class HallController:
         self.controllerType: ControllerType = ControllerType.HALL
 
     def process_movement_in_direction(self, request: Request):
-        request.update_request_status(RequestStatus.PROGRESS)
-
         print(f"ID {request.request_id}, "
               f"Controller type {self.controllerType}, "
               f"Request type {request.request_type}, "
@@ -92,7 +90,6 @@ class CabinController:
 
     def process_movement_in_direction(self, request: Request):
         self._move_cabin_one_floor(direction=request.requested_direction)
-        request.update_request_status(RequestStatus.PROGRESS)
 
         print(f"ID {request.request_id}, "
               f"Controller type {self.controllerType}, "
@@ -106,7 +103,6 @@ class CabinController:
 
 class RequestProcessor:
     def __init__(self, **kwargs):
-        self.requests: [Request] = []
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -125,7 +121,7 @@ class RequestProcessor:
         )
 
     def process_hall_request(self, hall, request: Request):
-        self.requests.append(request)
+        request.update_request_status(RequestStatus.SUBMITTED)
 
         hall_controller = getattr(self, hall)
 
@@ -133,15 +129,18 @@ class RequestProcessor:
             print("no movement needed")
 
         while hall_controller.floor != self.cabin_controller.currentFloor:
+            request.update_request_status(RequestStatus.PROGRESS)
+
             hall_controller.process_movement_in_direction(request=request)
             self.cabin_controller.process_movement_in_direction(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
     def process_cabin_request(self, request: Request):
-        self.requests.append(request)
+        request.update_request_status(RequestStatus.SUBMITTED)
 
         while self.cabin_controller.currentFloor != request.requested_to_floor:
+            request.update_request_status(RequestStatus.PROGRESS)
             self.cabin_controller.process_movement_in_direction(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
