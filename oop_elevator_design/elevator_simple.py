@@ -36,32 +36,48 @@ class Request:
     ):
         self.request_id = str(uuid4())
         self.request_type = request_type
-        self.requested_direction = Request.eval_direction(
-            requested_from_floor, requested_to_floor
-        )
-        self.requested_to_floor = requested_to_floor
-        self.requested_from_floor = requested_from_floor
+        self.requested_to_floor, self.requested_from_floor = \
+            Request._get_validated_request_floors(
+                requested_to_floor,
+                requested_from_floor
+            )
+        self.requested_direction = \
+            Request._eval_direction(
+                requested_from_floor,
+                requested_to_floor
+            )
         self.request_status = None
 
-    def update_request_status(self, status: RequestStatus) -> None:
-        self.request_status = status
+    @staticmethod
+    def _get_validated_request_floors(
+            requested_to_floor: int,
+            requested_from_floor: int
+    ) -> (int, int):
+        if requested_to_floor > MAX_FLOOR:
+            raise ValueError(f"invalid requested_to_floor value {requested_to_floor}")
+        if requested_from_floor < MIN_FLOOR:
+            raise ValueError(f"invalid request_from_floor value {requested_from_floor}")
+        return requested_to_floor, requested_from_floor
 
     @staticmethod
-    def eval_direction(from_floor: int, to_floor: int) -> Optional[Direction]:
+    def _eval_direction(from_floor: int, to_floor: int) -> Optional[Direction]:
         if from_floor > to_floor:
             return Direction.DOWN
         if from_floor < to_floor:
             return Direction.UP
 
+    def update_request_status(self, status: RequestStatus) -> None:
+        self.request_status = status
+
 
 class HallController:
     def __init__(self, floor: int):
         self.floor: int = floor
-        self.controllerType: ControllerType = ControllerType.HALL
+        self.controller_type: ControllerType = ControllerType.HALL
 
     def process_movement_in_direction(self, request: Request):
         print(f"ID {request.request_id}, "
-              f"Controller type {self.controllerType}, "
+              f"Controller type {self.controller_type}, "
               f"Request type {request.request_type}, "
               f"Status{request.request_status}, "
               f"Requested direction {request.requested_direction}, "
@@ -71,16 +87,16 @@ class HallController:
 
 class CabinController:
     def __init__(self):
-        self.currentFloor: int = MIN_FLOOR
-        self.controllerType: ControllerType = ControllerType.CABIN
+        self.current_floor: int = MIN_FLOOR
+        self.controller_type: ControllerType = ControllerType.CABIN
 
     def _add_one_floor(self):
-        if self.currentFloor < MAX_FLOOR:
-            self.currentFloor += 1
+        if self.current_floor < MAX_FLOOR:
+            self.current_floor += 1
 
     def _subtract_one_floor(self):
-        if self.currentFloor > MIN_FLOOR:
-            self.currentFloor -= 1
+        if self.current_floor > MIN_FLOOR:
+            self.current_floor -= 1
 
     def _move_cabin_one_floor(self, direction: Direction):
         if direction == Direction.UP:
@@ -92,13 +108,13 @@ class CabinController:
         self._move_cabin_one_floor(direction=request.requested_direction)
 
         print(f"ID {request.request_id}, "
-              f"Controller type {self.controllerType}, "
+              f"Controller type {self.controller_type}, "
               f"Request type {request.request_type}, "
               f"Status {request.request_status}, "
               f"Requested direction {request.requested_direction}, "
               f"Requested from floor {request.requested_from_floor}, "
               f"Requested to floor {request.requested_to_floor}, "
-              f"Current floor {self.currentFloor}")
+              f"Current floor {self.current_floor}")
 
 
 class RequestProcessor:
@@ -107,28 +123,34 @@ class RequestProcessor:
             setattr(self, key, value)
 
     def create_hall_request(self, requested_from_floor: int):
-        return Request(
-            request_type=RequestType.HALL,
-            requested_to_floor=requested_from_floor,
-            requested_from_floor=self.cabin_controller.currentFloor
-        )
+        try:
+            return Request(
+                request_type=RequestType.HALL,
+                requested_to_floor=requested_from_floor,
+                requested_from_floor=self.cabin_controller.current_floor
+            )
+        except ValueError as val_err:
+            raise val_err
 
     def create_cabin_request(self, requested_to_floor):
-        return Request(
-            request_type=RequestType.CABIN,
-            requested_to_floor=requested_to_floor,
-            requested_from_floor=self.cabin_controller.currentFloor
-        )
+        try:
+            return Request(
+                request_type=RequestType.CABIN,
+                requested_to_floor=requested_to_floor,
+                requested_from_floor=self.cabin_controller.current_floor
+            )
+        except ValueError as val_err:
+            raise val_err
 
     def process_hall_request(self, hall, request: Request):
         request.update_request_status(RequestStatus.SUBMITTED)
 
         hall_controller = getattr(self, hall)
 
-        if hall_controller.floor == self.cabin_controller.currentFloor:
+        if hall_controller.floor == self.cabin_controller.current_floor:
             print("no movement needed")
 
-        while hall_controller.floor != self.cabin_controller.currentFloor:
+        while hall_controller.floor != self.cabin_controller.current_floor:
             request.update_request_status(RequestStatus.PROGRESS)
 
             hall_controller.process_movement_in_direction(request=request)
@@ -139,23 +161,18 @@ class RequestProcessor:
     def process_cabin_request(self, request: Request):
         request.update_request_status(RequestStatus.SUBMITTED)
 
-        while self.cabin_controller.currentFloor != request.requested_to_floor:
+        while self.cabin_controller.current_floor != request.requested_to_floor:
             request.update_request_status(RequestStatus.PROGRESS)
             self.cabin_controller.process_movement_in_direction(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
 
-__floor1_hall_controller = HallController(floor=1)
-__floor2_hall_controller = HallController(floor=2)
-__floor3_hall_controller = HallController(floor=3)
-__cabin_controller = CabinController()
-
 request_processor = RequestProcessor(
-    **dict(floor1_hall_controller=__floor1_hall_controller,
-           floor2_hall_controller=__floor2_hall_controller,
-           floor3_hall_controller=__floor3_hall_controller,
-           cabin_controller=__cabin_controller)
+    **dict(floor1_hall_controller=HallController(floor=1),
+           floor2_hall_controller=HallController(floor=2),
+           floor3_hall_controller=HallController(floor=3),
+           cabin_controller=CabinController())
 )
 
 
