@@ -16,7 +16,7 @@ class RequestType(Enum):
     CABIN = auto()
 
 
-class ControllerType(Enum):
+class Location(Enum):
     HALL = auto()
     CABIN = auto()
 
@@ -70,14 +70,14 @@ class Request:
         self.request_status = status
 
 
-class HallController:
+class Hall:
     def __init__(self, floor: int):
         self.floor: int = floor
-        self.controller_type: ControllerType = ControllerType.HALL
+        self.location_type: Location = Location.HALL
 
     def process_movement_in_direction(self, request: Request):
         print(f"ID {request.request_id}, "
-              f"Controller type {self.controller_type}, "
+              f"Location type {self.location_type}, "
               f"Request type {request.request_type}, "
               f"Status{request.request_status}, "
               f"Requested direction {request.requested_direction}, "
@@ -85,30 +85,22 @@ class HallController:
               f"Hall floor {self.floor}")
 
 
-class CabinController:
+class Cabin:
     def __init__(self):
         self.current_floor: int = MIN_FLOOR
-        self.controller_type: ControllerType = ControllerType.CABIN
-
-    def _add_one_floor(self):
-        if self.current_floor < MAX_FLOOR:
-            self.current_floor += 1
-
-    def _subtract_one_floor(self):
-        if self.current_floor > MIN_FLOOR:
-            self.current_floor -= 1
+        self.location_type: Location = Location.CABIN
 
     def _move_cabin_one_floor(self, direction: Direction):
         if direction == Direction.UP:
-            self._add_one_floor()
+            self.current_floor += 1
         elif direction == Direction.DOWN:
-            self._subtract_one_floor()
+            self.current_floor -= 1
 
     def process_movement_in_direction(self, request: Request):
         self._move_cabin_one_floor(direction=request.requested_direction)
 
         print(f"ID {request.request_id}, "
-              f"Controller type {self.controller_type}, "
+              f"Location type {self.location_type}, "
               f"Request type {request.request_type}, "
               f"Status {request.request_status}, "
               f"Requested direction {request.requested_direction}, "
@@ -118,75 +110,75 @@ class CabinController:
 
 
 class RequestProcessor:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
+    def __init__(self, cabin: Cabin, **halls: dict):
+        self.cabin = cabin
+        for key, value in halls.items():
             setattr(self, key, value)
 
-    def create_hall_request(self, requested_from_floor: int):
+    def create_hall_request(self, requested_from_floor: int) -> Request:
         try:
             return Request(
                 request_type=RequestType.HALL,
                 requested_to_floor=requested_from_floor,
-                requested_from_floor=self.cabin_controller.current_floor
+                requested_from_floor=self.cabin.current_floor
             )
         except ValueError as val_err:
             raise val_err
 
-    def create_cabin_request(self, requested_to_floor):
+    def create_cabin_request(self, requested_to_floor: int) -> Request:
         try:
             return Request(
                 request_type=RequestType.CABIN,
                 requested_to_floor=requested_to_floor,
-                requested_from_floor=self.cabin_controller.current_floor
+                requested_from_floor=self.cabin.current_floor
             )
         except ValueError as val_err:
             raise val_err
 
-    def process_hall_request(self, hall, request: Request):
+    def process_hall_request(self, hall_name: str, request: Request) -> None:
         request.update_request_status(RequestStatus.SUBMITTED)
 
-        hall_controller = getattr(self, hall)
+        hall = getattr(self, hall_name)
 
-        if hall_controller.floor == self.cabin_controller.current_floor:
+        if hall.floor == self.cabin.current_floor:
             print("no movement needed")
 
-        while hall_controller.floor != self.cabin_controller.current_floor:
+        while hall.floor != self.cabin.current_floor:
             request.update_request_status(RequestStatus.PROGRESS)
 
-            hall_controller.process_movement_in_direction(request=request)
-            self.cabin_controller.process_movement_in_direction(request=request)
+            hall.process_movement_in_direction(request=request)
+            self.cabin.process_movement_in_direction(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
-    def process_cabin_request(self, request: Request):
+    def process_cabin_request(self, request: Request) -> None:
         request.update_request_status(RequestStatus.SUBMITTED)
 
-        while self.cabin_controller.current_floor != request.requested_to_floor:
+        while self.cabin.current_floor != request.requested_to_floor:
             request.update_request_status(RequestStatus.PROGRESS)
-            self.cabin_controller.process_movement_in_direction(request=request)
+            self.cabin.process_movement_in_direction(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
 
 request_processor = RequestProcessor(
-    **dict(floor1_hall_controller=HallController(floor=1),
-           floor2_hall_controller=HallController(floor=2),
-           floor3_hall_controller=HallController(floor=3),
-           cabin_controller=CabinController())
+    cabin=Cabin(),
+    **{f"floor{floor_number}_hall": Hall(floor_number)
+       for floor_number in range(MIN_FLOOR, MAX_FLOOR + 1)}
 )
 
 
-def push_hall_button(requested_from_floor):
+def push_hall_button(requested_from_floor: int):
     request = request_processor.create_hall_request(
         requested_from_floor=requested_from_floor
     )
 
-    hall_id = f"floor{requested_from_floor}_hall_controller"
+    hall_name = f"floor{requested_from_floor}_hall"
 
-    request_processor.process_hall_request(hall_id, request)
+    request_processor.process_hall_request(hall_name, request)
 
 
-def push_cabin_button(requested_to_floor):
+def push_cabin_button(requested_to_floor: int):
     request = request_processor.create_cabin_request(
         requested_to_floor=requested_to_floor
     )
