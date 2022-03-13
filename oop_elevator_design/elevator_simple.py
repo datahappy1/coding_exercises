@@ -73,17 +73,6 @@ class Hall:
         self.floor: int = floor
         self.location_type: Location = Location.HALL
 
-    def print_progress(self, request: Request):
-        print(
-            f"ID {request.request_id}, "
-            f"Location type {self.location_type}, "
-            f"Request type {request.request_type}, "
-            f"Status{request.request_status}, "
-            f"Requested direction {request.requested_direction}, "
-            f"Requested from floor {request.requested_from_floor}, "
-            f"Hall floor {self.floor}"
-        )
-
 
 class Cabin:
     def __init__(self):
@@ -98,18 +87,6 @@ class Cabin:
 
     def process_movement_in_direction(self, request: Request):
         self._move_cabin_one_floor(direction=request.requested_direction)
-
-    def print_progress(self, request: Request):
-        print(
-            f"ID {request.request_id}, "
-            f"Location type {self.location_type}, "
-            f"Request type {request.request_type}, "
-            f"Status {request.request_status}, "
-            f"Requested direction {request.requested_direction}, "
-            f"Requested from floor {request.requested_from_floor}, "
-            f"Requested to floor {request.requested_to_floor}, "
-            f"Current floor {self.current_floor}"
-        )
 
 
 class RequestProcessor:
@@ -138,6 +115,31 @@ class RequestProcessor:
         except ValueError as val_err:
             raise val_err
 
+    def print_hall_request_state(self, hall_id: str, request: Request):
+        hall = getattr(self, hall_id)
+
+        print(
+            f"ID {request.request_id}, "
+            f"Location type {hall.location_type}, "
+            f"Request type {request.request_type}, "
+            f"Status{request.request_status}, "
+            f"Requested direction {request.requested_direction}, "
+            f"Requested from floor {request.requested_from_floor}, "
+            f"Hall floor {hall.floor}"
+        )
+
+    def print_cabin_request_state(self, request: Request):
+        print(
+            f"ID {request.request_id}, "
+            f"Location type {self.cabin.location_type}, "
+            f"Request type {request.request_type}, "
+            f"Status {request.request_status}, "
+            f"Requested direction {request.requested_direction}, "
+            f"Requested from floor {request.requested_from_floor}, "
+            f"Requested to floor {request.requested_to_floor}, "
+            f"Current floor {self.cabin.current_floor}"
+        )
+
     def process_hall_request(self, hall_id: str, request: Request) -> None:
         request.update_request_status(RequestStatus.SUBMITTED)
 
@@ -149,9 +151,9 @@ class RequestProcessor:
         while hall.floor != self.cabin.current_floor:
             request.update_request_status(RequestStatus.PROGRESS)
 
-            hall.print_progress(request=request)
+            self.print_hall_request_state(hall_id=hall_id, request=request)
             self.cabin.process_movement_in_direction(request=request)
-            self.cabin.print_progress(request=request)
+            self.print_cabin_request_state(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
@@ -162,7 +164,7 @@ class RequestProcessor:
             request.update_request_status(RequestStatus.PROGRESS)
 
             self.cabin.process_movement_in_direction(request=request)
-            self.cabin.print_progress(request=request)
+            self.print_cabin_request_state(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
