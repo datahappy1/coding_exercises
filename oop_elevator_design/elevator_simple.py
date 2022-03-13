@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional
+from typing import Optional, Dict
 from uuid import uuid4
 
 MIN_FLOOR = 1
@@ -112,7 +112,7 @@ class Cabin:
 
 
 class RequestProcessor:
-    def __init__(self, cabin: Cabin, **halls: dict):
+    def __init__(self, cabin: Cabin, **halls: Dict[str, Hall]):
         self.cabin = cabin
         for key, value in halls.items():
             setattr(self, key, value)
