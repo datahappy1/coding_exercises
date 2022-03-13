@@ -73,7 +73,7 @@ class Hall:
         self.floor: int = floor
         self.location_type: Location = Location.HALL
 
-    def process_movement_in_direction(self, request: Request):
+    def print_progress(self, request: Request):
         print(
             f"ID {request.request_id}, "
             f"Location type {self.location_type}, "
@@ -99,6 +99,7 @@ class Cabin:
     def process_movement_in_direction(self, request: Request):
         self._move_cabin_one_floor(direction=request.requested_direction)
 
+    def print_progress(self, request: Request):
         print(
             f"ID {request.request_id}, "
             f"Location type {self.location_type}, "
@@ -148,8 +149,9 @@ class RequestProcessor:
         while hall.floor != self.cabin.current_floor:
             request.update_request_status(RequestStatus.PROGRESS)
 
-            hall.process_movement_in_direction(request=request)
+            hall.print_progress(request=request)
             self.cabin.process_movement_in_direction(request=request)
+            self.cabin.print_progress(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
@@ -158,7 +160,9 @@ class RequestProcessor:
 
         while self.cabin.current_floor != request.requested_to_floor:
             request.update_request_status(RequestStatus.PROGRESS)
+
             self.cabin.process_movement_in_direction(request=request)
+            self.cabin.print_progress(request=request)
 
         request.update_request_status(RequestStatus.COMPLETED)
 
