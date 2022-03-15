@@ -160,6 +160,15 @@ class Cabin:
         request.update_request_status(RequestStatus.COMPLETED)
 
 
+class Mediator:
+    def __init__(self):
+        self.cabin = Cabin(self)
+        self.halls = {
+            transform_floor_to_hall(floor_number): Hall(self, floor_number)
+            for floor_number in range(MIN_FLOOR, MAX_FLOOR + 1)
+        }
+
+
 def transform_floor_to_hall(floor: int):
     return f"hall{floor}"
 
@@ -181,14 +190,6 @@ def push_cabin_button(mediator, requested_to_floor: int):
 
 
 def main():
-    class Mediator:
-        def __init__(self):
-            self.cabin = Cabin(self)
-            self.halls = {
-                transform_floor_to_hall(floor_number): Hall(self, floor_number)
-                for floor_number in range(MIN_FLOOR, MAX_FLOOR + 1)
-            }
-
     mediator = Mediator()
 
     push_hall_button(mediator=mediator, requested_from_floor=1)

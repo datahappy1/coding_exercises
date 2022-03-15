@@ -188,8 +188,7 @@ def push_hall_button(requested_from_floor: int):
     )
 
     request_processor.process_hall_request(
-        hall_id=transform_floor_number_to_hall_id(requested_from_floor),
-        request=request
+        hall_id=transform_floor_number_to_hall_id(requested_from_floor), request=request
     )
 
 
@@ -198,9 +197,7 @@ def push_cabin_button(requested_to_floor: int):
         requested_to_floor=requested_to_floor
     )
 
-    request_processor.process_cabin_request(
-        request=request
-    )
+    request_processor.process_cabin_request(request=request)
 
 
 push_hall_button(requested_from_floor=1)
