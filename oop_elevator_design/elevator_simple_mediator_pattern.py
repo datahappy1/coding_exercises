@@ -29,10 +29,10 @@ class RequestStatus(Enum):
 
 class Request:
     def __init__(
-        self,
-        request_type: RequestType,
-        requested_to_floor: int,
-        requested_from_floor: int,
+            self,
+            request_type: RequestType,
+            requested_to_floor: int,
+            requested_from_floor: int,
     ):
         self.request_id = str(uuid4())
         self.request_type = request_type
@@ -49,7 +49,7 @@ class Request:
 
     @staticmethod
     def _get_validated_request_floors(
-        requested_to_floor: int, requested_from_floor: int
+            requested_to_floor: int, requested_from_floor: int
     ) -> (int, int):
         if requested_to_floor > MAX_FLOOR:
             raise ValueError(f"invalid requested_to_floor value {requested_to_floor}")
@@ -87,54 +87,24 @@ class Hall:
     def print_hall_request_state(self, hall, request: Request):
         print(
             f"ID {request.request_id}, "
-            f"Location type {hall.location_type}, "
+            f"Location type {self._mediator.halls[hall].location_type}, "
             f"Request type {request.request_type}, "
             f"Status{request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "
-            f"Hall floor {hall.floor}"
+            f"Hall floor {self._mediator.halls[hall].floor}"
         )
 
-    def process_hall1_request(self, request: Request) -> None:
+    def process_hall_request(self, hall: str, request: Request) -> None:
         request.update_request_status(RequestStatus.SUBMITTED)
 
-        if self._mediator.hall1.floor == self._mediator.cabin.current_floor:
+        if self._mediator.halls[hall].floor == self._mediator.cabin.current_floor:
             print("no movement needed")
 
-        while self._mediator.hall1.floor != self._mediator.cabin.current_floor:
+        while self._mediator.halls[hall].floor != self._mediator.cabin.current_floor:
             request.update_request_status(RequestStatus.PROGRESS)
 
-            self.print_hall_request_state(hall=self._mediator.hall1, request=request)
-            self._mediator.cabin.process_movement_in_direction(request=request)
-            self._mediator.cabin.print_cabin_request_state(request=request)
-
-        request.update_request_status(RequestStatus.COMPLETED)
-
-    def process_hall2_request(self, request: Request) -> None:
-        request.update_request_status(RequestStatus.SUBMITTED)
-
-        if self._mediator.hall2.floor == self._mediator.cabin.current_floor:
-            print("no movement needed")
-
-        while self._mediator.hall2.floor != self._mediator.cabin.current_floor:
-            request.update_request_status(RequestStatus.PROGRESS)
-
-            self.print_hall_request_state(hall=self._mediator.hall2, request=request)
-            self._mediator.cabin.process_movement_in_direction(request=request)
-            self._mediator.cabin.print_cabin_request_state(request=request)
-
-        request.update_request_status(RequestStatus.COMPLETED)
-
-    def process_hall3_request(self, request: Request) -> None:
-        request.update_request_status(RequestStatus.SUBMITTED)
-
-        if self._mediator.hall3.floor == self._mediator.cabin.current_floor:
-            print("no movement needed")
-
-        while self._mediator.hall3.floor != self._mediator.cabin.current_floor:
-            request.update_request_status(RequestStatus.PROGRESS)
-
-            self.print_hall_request_state(hall=self._mediator.hall3, request=request)
+            self.print_hall_request_state(hall=hall, request=request)
             self._mediator.cabin.process_movement_in_direction(request=request)
             self._mediator.cabin.print_cabin_request_state(request=request)
 
@@ -193,27 +163,17 @@ class Cabin:
 class Mediator:
     def __init__(self):
         self.cabin = Cabin(self)
-        self.hall1 = Hall(self, 1)
-        self.hall2 = Hall(self, 2)
-        self.hall3 = Hall(self, 3)
+        self.halls = dict(hall1=Hall(self, 1), hall2=Hall(self, 2), hall3=Hall(self, 3))
 
 
-def push_hall_button(mediator: Mediator, requested_from_floor: int):
-    if requested_from_floor == 1:
-        request = mediator.hall1.create_hall_request(
-            requested_from_floor=requested_from_floor
-        )
-        mediator.hall1.process_hall1_request(request=request)
-    if requested_from_floor == 2:
-        request = mediator.hall2.create_hall_request(
-            requested_from_floor=requested_from_floor
-        )
-        mediator.hall2.process_hall2_request(request=request)
-    if requested_from_floor == 3:
-        request = mediator.hall3.create_hall_request(
-            requested_from_floor=requested_from_floor
-        )
-        mediator.hall3.process_hall3_request(request=request)
+def push_hall_button(mapping: dict, requested_from_floor: int):
+    request = mapping[requested_from_floor].create_hall_request(
+        requested_from_floor=requested_from_floor
+    )
+
+    mapping[requested_from_floor].process_hall_request(
+        hall=f"hall{requested_from_floor}", request=request
+    )
 
 
 def push_cabin_button(mediator: Mediator, requested_to_floor: int):
@@ -225,13 +185,19 @@ def push_cabin_button(mediator: Mediator, requested_to_floor: int):
 def main():
     mediator = Mediator()
 
-    push_hall_button(mediator=mediator, requested_from_floor=1)
+    mediator_floor_to_hall_mapping = {
+        1: mediator.halls["hall1"],
+        2: mediator.halls["hall2"],
+        3: mediator.halls["hall3"],
+    }
 
-    push_hall_button(mediator=mediator, requested_from_floor=3)
+    push_hall_button(mapping=mediator_floor_to_hall_mapping, requested_from_floor=1)
+
+    push_hall_button(mapping=mediator_floor_to_hall_mapping, requested_from_floor=3)
 
     push_cabin_button(mediator=mediator, requested_to_floor=2)
 
-    push_hall_button(mediator=mediator, requested_from_floor=2)
+    push_hall_button(mapping=mediator_floor_to_hall_mapping, requested_from_floor=2)
 
     push_cabin_button(mediator=mediator, requested_to_floor=1)
 
