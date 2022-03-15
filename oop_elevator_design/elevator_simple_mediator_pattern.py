@@ -84,7 +84,7 @@ class Hall:
         except ValueError as val_err:
             raise val_err
 
-    def print_hall_request_state(self, hall, request: Request):
+    def print_hall_request_state(self, hall: str, request: Request):
         print(
             f"ID {request.request_id}, "
             f"Location type {self._mediator.halls[hall].location_type}, "
