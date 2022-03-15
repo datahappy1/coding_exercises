@@ -2,8 +2,8 @@ from enum import Enum, auto
 from typing import Optional
 from uuid import uuid4
 
-MIN_FLOOR = 1
-MAX_FLOOR = 3
+MIN_FLOOR_NUMBER = 1
+MAX_FLOOR_NUMBER = 5
 
 
 class Direction(Enum):
@@ -51,9 +51,9 @@ class Request:
     def _get_validated_request_floors(
         requested_to_floor: int, requested_from_floor: int
     ) -> (int, int):
-        if requested_to_floor > MAX_FLOOR:
+        if requested_to_floor > MAX_FLOOR_NUMBER:
             raise ValueError(f"invalid requested_to_floor value {requested_to_floor}")
-        if requested_from_floor < MIN_FLOOR:
+        if requested_from_floor < MIN_FLOOR_NUMBER:
             raise ValueError(f"invalid request_from_floor value {requested_from_floor}")
         return requested_to_floor, requested_from_floor
 
@@ -84,27 +84,29 @@ class Hall:
         except ValueError as val_err:
             raise val_err
 
-    def print_hall_request_state(self, hall: str, request: Request):
+    def print_hall_request_state(self, hall_name: str, request: Request):
         print(
             f"ID {request.request_id}, "
-            f"Location type {self._mediator.halls[hall].location_type}, "
+            f"Location type {self._mediator.halls[hall_name].location_type}, "
             f"Request type {request.request_type}, "
             f"Status{request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "
-            f"Hall floor {self._mediator.halls[hall].floor}"
+            f"Hall floor {self._mediator.halls[hall_name].floor}"
         )
 
-    def process_hall_request(self, hall: str, request: Request) -> None:
+    def process_hall_request(self, hall_name: str, request: Request) -> None:
         request.update_request_status(RequestStatus.SUBMITTED)
 
-        if self._mediator.halls[hall].floor == self._mediator.cabin.current_floor:
+        if self._mediator.halls[hall_name].floor == self._mediator.cabin.current_floor:
             print("no movement needed")
 
-        while self._mediator.halls[hall].floor != self._mediator.cabin.current_floor:
+        while (
+            self._mediator.halls[hall_name].floor != self._mediator.cabin.current_floor
+        ):
             request.update_request_status(RequestStatus.PROGRESS)
 
-            self.print_hall_request_state(hall=hall, request=request)
+            self.print_hall_request_state(hall_name=hall_name, request=request)
             self._mediator.cabin.process_movement_in_direction(request=request)
             self._mediator.cabin.print_cabin_request_state(request=request)
 
@@ -114,7 +116,7 @@ class Hall:
 class Cabin:
     def __init__(self, mediator):
         self._mediator = mediator
-        self.current_floor: int = MIN_FLOOR
+        self.current_floor: int = MIN_FLOOR_NUMBER
         self.location_type: Location = Location.CABIN
 
     def _move_cabin_one_floor(self, direction: Direction):
@@ -164,26 +166,26 @@ class Mediator:
     def __init__(self):
         self.cabin = Cabin(self)
         self.halls = {
-            transform_floor_to_hall(floor_number): Hall(self, floor_number)
-            for floor_number in range(MIN_FLOOR, MAX_FLOOR + 1)
+            transform_floor_number_to_hall_name(floor_number): Hall(self, floor_number)
+            for floor_number in range(MIN_FLOOR_NUMBER, MAX_FLOOR_NUMBER + 1)
         }
 
 
-def transform_floor_to_hall(floor: int):
+def transform_floor_number_to_hall_name(floor: int) -> str:
     return f"hall{floor}"
 
 
-def push_hall_button(mediator, requested_from_floor: int):
-    request = mediator.halls[
-        transform_floor_to_hall(requested_from_floor)
-    ].create_hall_request(requested_from_floor=requested_from_floor)
+def push_hall_button(mediator: Mediator, requested_from_floor: int):
+    hall_name = transform_floor_number_to_hall_name(requested_from_floor)
 
-    mediator.halls[transform_floor_to_hall(requested_from_floor)].process_hall_request(
-        hall=f"hall{requested_from_floor}", request=request
+    request = mediator.halls[hall_name].create_hall_request(
+        requested_from_floor=requested_from_floor
     )
 
+    mediator.halls[hall_name].process_hall_request(hall_name=hall_name, request=request)
 
-def push_cabin_button(mediator, requested_to_floor: int):
+
+def push_cabin_button(mediator: Mediator, requested_to_floor: int):
     request = mediator.cabin.create_cabin_request(requested_to_floor=requested_to_floor)
 
     mediator.cabin.process_cabin_request(request=request)
@@ -203,6 +205,8 @@ def main():
     push_cabin_button(mediator=mediator, requested_to_floor=1)
 
     push_cabin_button(mediator=mediator, requested_to_floor=3)
+
+    push_cabin_button(mediator=mediator, requested_to_floor=5)
 
 
 if __name__ == "__main__":
