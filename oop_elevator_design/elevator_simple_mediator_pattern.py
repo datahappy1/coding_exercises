@@ -11,11 +11,6 @@ class Direction(Enum):
     DOWN = auto()
 
 
-class RequestType(Enum):
-    HALL = auto()
-    CABIN = auto()
-
-
 class Location(Enum):
     HALL = auto()
     CABIN = auto()
@@ -30,12 +25,12 @@ class RequestStatus(Enum):
 class Request:
     def __init__(
         self,
-        request_type: RequestType,
+        request_location: Location,
         requested_to_floor: int,
         requested_from_floor: int,
     ):
         self.request_id = str(uuid4())
-        self.request_type = request_type
+        self.request_location = request_location
         (
             self.requested_to_floor,
             self.requested_from_floor,
@@ -77,7 +72,7 @@ class Hall:
     def create_hall_request(self, requested_from_floor: int) -> Request:
         try:
             return Request(
-                request_type=RequestType.HALL,
+                request_location=Location.HALL,
                 requested_to_floor=requested_from_floor,
                 requested_from_floor=self._mediator.cabin.current_floor,
             )
@@ -88,7 +83,7 @@ class Hall:
         print(
             f"ID {request.request_id}, "
             f"Location type {self._mediator.halls[hall_name].location_type}, "
-            f"Request type {request.request_type}, "
+            f"Request location {request.request_location}, "
             f"Status{request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "
@@ -131,7 +126,7 @@ class Cabin:
     def create_cabin_request(self, requested_to_floor: int) -> Request:
         try:
             return Request(
-                request_type=RequestType.CABIN,
+                request_location=Location.CABIN,
                 requested_to_floor=requested_to_floor,
                 requested_from_floor=self._mediator.cabin.current_floor,
             )
@@ -142,7 +137,7 @@ class Cabin:
         print(
             f"ID {request.request_id}, "
             f"Location type {self._mediator.cabin.location_type}, "
-            f"Request type {request.request_type}, "
+            f"Request location {request.request_location}, "
             f"Status {request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "

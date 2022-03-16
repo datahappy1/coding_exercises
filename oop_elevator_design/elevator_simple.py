@@ -11,11 +11,6 @@ class Direction(Enum):
     DOWN = auto()
 
 
-class RequestType(Enum):
-    HALL = auto()
-    CABIN = auto()
-
-
 class Location(Enum):
     HALL = auto()
     CABIN = auto()
@@ -30,12 +25,12 @@ class RequestStatus(Enum):
 class Request:
     def __init__(
         self,
-        request_type: RequestType,
+        request_location: Location,
         requested_to_floor: int,
         requested_from_floor: int,
     ):
         self.request_id = str(uuid4())
-        self.request_type = request_type
+        self.request_location = request_location
         (
             self.requested_to_floor,
             self.requested_from_floor,
@@ -98,7 +93,7 @@ class RequestProcessor:
     def create_hall_request(self, requested_from_floor: int) -> Request:
         try:
             return Request(
-                request_type=RequestType.HALL,
+                request_location=Location.HALL,
                 requested_to_floor=requested_from_floor,
                 requested_from_floor=self.cabin.current_floor,
             )
@@ -108,7 +103,7 @@ class RequestProcessor:
     def create_cabin_request(self, requested_to_floor: int) -> Request:
         try:
             return Request(
-                request_type=RequestType.CABIN,
+                request_location=Location.CABIN,
                 requested_to_floor=requested_to_floor,
                 requested_from_floor=self.cabin.current_floor,
             )
@@ -121,7 +116,7 @@ class RequestProcessor:
         print(
             f"ID {request.request_id}, "
             f"Location type {hall.location_type}, "
-            f"Request type {request.request_type}, "
+            f"Request location {request.request_location}, "
             f"Status{request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "
@@ -132,7 +127,7 @@ class RequestProcessor:
         print(
             f"ID {request.request_id}, "
             f"Location type {self.cabin.location_type}, "
-            f"Request type {request.request_type}, "
+            f"Request location {request.request_location}, "
             f"Status {request.request_status}, "
             f"Requested direction {request.requested_direction}, "
             f"Requested from floor {request.requested_from_floor}, "
