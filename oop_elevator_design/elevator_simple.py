@@ -31,12 +31,10 @@ class Request:
     ):
         self.request_id = str(uuid4())
         self.request_location = request_location
-        (
-            self.requested_to_floor,
-            self.requested_from_floor,
-        ) = Request._get_validated_request_floors(
-            requested_to_floor, requested_from_floor
-        )
+        self.requested_to_floor, self.requested_from_floor = \
+            Request._get_validated_request_floors(
+                requested_to_floor, requested_from_floor
+            )
         self.requested_direction = Request._eval_direction(
             requested_from_floor, requested_to_floor
         )
