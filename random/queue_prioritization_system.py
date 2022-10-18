@@ -1,5 +1,5 @@
-from enum import Enum, auto
-from typing import List, Any, Optional, Union
+from enum import Enum
+from typing import List, Any, Optional
 from queue import Queue, LifoQueue
 
 
@@ -17,8 +17,8 @@ class Priority(Enum):
 
 
 class QueueType(Enum):
-    queue = Queue
-    lifo = LifoQueue
+    queue = Queue()
+    lifo = LifoQueue()
 
 
 class QueuePrioritizationSystem:
@@ -37,7 +37,7 @@ class QueuePrioritizationSystem:
         for _priority in self._sorted_priorities:
             self.__setattr__(
                 QueuePrioritizationSystem.priority_to_queue_name(_priority),
-                queue_type.value(),
+                queue_type.value,
             )
 
     def put_by_priority(self, priority: Priority, item: Item) -> None:
@@ -71,7 +71,7 @@ class QueuePrioritizationSystem:
 
 if __name__ == "__main__":
     qps = QueuePrioritizationSystem(
-        priorities=[Priority.High, Priority.Low], queue_type=QueueType.lifo
+        priorities=[Priority.High, Priority.Low], queue_type=QueueType.queue
     )
 
     for i in range(10):
