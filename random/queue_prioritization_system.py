@@ -17,14 +17,14 @@ class Priority(Enum):
 
 
 class QueueType(Enum):
-    queue = Queue()
-    lifo = LifoQueue()
+    queue = Queue
+    lifo = LifoQueue
 
 
 class QueuePrioritizationSystem:
     @staticmethod
-    def priority_to_queue_name(priority: Priority) -> str:
-        return f"{priority}_data"
+    def priority_to_queue_name(priority_name: str) -> str:
+        return f"{priority_name}_data".lower()
 
     @staticmethod
     def get_sorted_priorities(priorities: List[Priority]) -> List[Priority]:
@@ -36,18 +36,19 @@ class QueuePrioritizationSystem:
         )
         for _priority in self._sorted_priorities:
             self.__setattr__(
-                QueuePrioritizationSystem.priority_to_queue_name(_priority),
-                queue_type.value,
+                QueuePrioritizationSystem.priority_to_queue_name(_priority.name),
+                queue_type.value(),
             )
 
     def put_by_priority(self, priority: Priority, item: Item) -> None:
-        self.__getattribute__(
-            QueuePrioritizationSystem.priority_to_queue_name(priority=priority)
-        ).put_nowait(item)
+        _queue_ref = self.__getattribute__(
+            QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
+        )
+        _queue_ref.put(item)
 
     def get_by_priority(self, priority: Priority) -> Optional[Item]:
         _queue_ref = self.__getattribute__(
-            QueuePrioritizationSystem.priority_to_queue_name(priority=priority)
+            QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
         )
         if not _queue_ref.empty():
             return _queue_ref.get()
@@ -56,7 +57,7 @@ class QueuePrioritizationSystem:
     def _get_highest_priority_queue(self) -> Optional[QueueType]:
         for priority in self._sorted_priorities:
             _queue_ref = self.__getattribute__(
-                QueuePrioritizationSystem.priority_to_queue_name(priority=priority)
+                QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
             )
             if not _queue_ref.empty():
                 print(f"using {priority} priority queue")
@@ -79,17 +80,17 @@ if __name__ == "__main__":
             item=Item(f"something not-important {i}"), priority=Priority.Low
         )
 
-    print(qps.get_by_priority(priority=Priority.Low.Low))
+    print(qps.get_by_priority(priority=Priority.Low))
 
     for i in range(20):
         qps.put_by_priority(
             item=Item(f"something super-important {i}"), priority=Priority.High
         )
 
-    print(qps.get_by_priority(priority=Priority.High.High))
+    print(qps.get_by_priority(priority=Priority.High))
 
     print(qps.get())
     print(qps.get())
     print(qps.get())
 
-    print(qps.get_by_priority(priority=Priority.Low.Low))
+    print(qps.get_by_priority(priority=Priority.Low))
