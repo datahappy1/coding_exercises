@@ -73,7 +73,10 @@ class QueuePrioritizationSystem:
         return None
 
     def get(self) -> Optional[Item]:
-        return self._get_highest_priority_queue().get()
+        _queue_ref = self._get_highest_priority_queue()
+        if _queue_ref:
+            return _queue_ref.get()
+        return None
 
 
 if __name__ == "__main__":
@@ -95,8 +98,7 @@ if __name__ == "__main__":
 
     print(qps.get_by_priority(priority=Priority.High))
 
-    print(qps.get())
-    print(qps.get())
-    print(qps.get())
+    for i in range(42):
+        print(qps.get())
 
     print(qps.get_by_priority(priority=Priority.Low))
