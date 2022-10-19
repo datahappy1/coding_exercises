@@ -42,13 +42,17 @@ class QueuePrioritizationSystem:
 
     def put_by_priority(self, priority: Priority, item: Item) -> None:
         _queue_ref = self.__getattribute__(
-            QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
+            QueuePrioritizationSystem.priority_to_queue_name(
+                priority_name=priority.name
+            )
         )
         _queue_ref.put(item)
 
     def get_by_priority(self, priority: Priority) -> Optional[Item]:
         _queue_ref = self.__getattribute__(
-            QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
+            QueuePrioritizationSystem.priority_to_queue_name(
+                priority_name=priority.name
+            )
         )
         if not _queue_ref.empty():
             return _queue_ref.get()
@@ -57,7 +61,9 @@ class QueuePrioritizationSystem:
     def _get_highest_priority_queue(self) -> Optional[QueueType]:
         for priority in self._sorted_priorities:
             _queue_ref = self.__getattribute__(
-                QueuePrioritizationSystem.priority_to_queue_name(priority_name=priority.name)
+                QueuePrioritizationSystem.priority_to_queue_name(
+                    priority_name=priority.name
+                )
             )
             if not _queue_ref.empty():
                 print(f"using {priority} priority queue")
