@@ -40,36 +40,31 @@ class QueuePrioritizationSystem:
                 queue_type.value(),
             )
 
-    def put_by_priority(self, priority: Priority, item: Item) -> None:
-        _queue_ref = self.__getattribute__(
+    def _get_queue_ref_by_priority(self, priority: Priority):
+        return self.__getattribute__(
             QueuePrioritizationSystem.priority_to_queue_name(
                 priority_name=priority.name
             )
         )
-        _queue_ref.put(item)
-
-    def get_by_priority(self, priority: Priority) -> Optional[Item]:
-        _queue_ref = self.__getattribute__(
-            QueuePrioritizationSystem.priority_to_queue_name(
-                priority_name=priority.name
-            )
-        )
-        if not _queue_ref.empty():
-            return _queue_ref.get()
-        return None
 
     def _get_highest_priority_queue(self) -> Optional[QueueType]:
         for priority in self._sorted_priorities:
-            _queue_ref = self.__getattribute__(
-                QueuePrioritizationSystem.priority_to_queue_name(
-                    priority_name=priority.name
-                )
-            )
+            _queue_ref = self._get_queue_ref_by_priority(priority=priority)
             if not _queue_ref.empty():
                 print(f"using {priority} priority queue")
                 return _queue_ref
 
         print(f"no priority queue has data")
+        return None
+
+    def put_by_priority(self, priority: Priority, item: Item) -> None:
+        _queue_ref = self._get_queue_ref_by_priority(priority=priority)
+        _queue_ref.put(item)
+
+    def get_by_priority(self, priority: Priority) -> Optional[Item]:
+        _queue_ref = self._get_queue_ref_by_priority(priority=priority)
+        if not _queue_ref.empty():
+            return _queue_ref.get()
         return None
 
     def get(self) -> Optional[Item]:
