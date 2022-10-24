@@ -34,13 +34,16 @@ class QueuePrioritizationSystem:
         self._sorted_priorities = QueuePrioritizationSystem.get_sorted_priorities(
             priorities=priorities
         )
-        for _priority in self._sorted_priorities:
-            self.__setattr__(
-                QueuePrioritizationSystem.priority_to_queue_name(_priority.name),
-                queue_type.value(),
-            )
+        for priority in self._sorted_priorities:
+            self._set_queue(priority=priority, queue_type=queue_type)
 
-    def _get_queue_ref_by_priority(self, priority: Priority):
+    def _set_queue(self, priority: Priority, queue_type: QueueType) -> None:
+        self.__setattr__(
+            QueuePrioritizationSystem.priority_to_queue_name(priority.name),
+            queue_type.value(),
+        )
+
+    def _get_queue_by_priority(self, priority: Priority) -> QueueType:
         return self.__getattribute__(
             QueuePrioritizationSystem.priority_to_queue_name(
                 priority_name=priority.name
@@ -49,7 +52,7 @@ class QueuePrioritizationSystem:
 
     def _get_highest_priority_queue(self) -> Optional[QueueType]:
         for priority in self._sorted_priorities:
-            _queue_ref = self._get_queue_ref_by_priority(priority=priority)
+            _queue_ref = self._get_queue_by_priority(priority=priority)
             if not _queue_ref.empty():
                 print(f"using {priority} priority queue")
                 return _queue_ref
@@ -58,11 +61,11 @@ class QueuePrioritizationSystem:
         return None
 
     def put_by_priority(self, priority: Priority, item: Item) -> None:
-        _queue_ref = self._get_queue_ref_by_priority(priority=priority)
+        _queue_ref = self._get_queue_by_priority(priority=priority)
         _queue_ref.put(item)
 
     def get_by_priority(self, priority: Priority) -> Optional[Item]:
-        _queue_ref = self._get_queue_ref_by_priority(priority=priority)
+        _queue_ref = self._get_queue_by_priority(priority=priority)
         if not _queue_ref.empty():
             return _queue_ref.get()
         return None
