@@ -42,7 +42,7 @@ class LinkedFactsList:
             name=fact.name,
             parent_fact=parent_fact.name if parent_fact else None,
             parent_divider=1 / parent_fact.child_multiplier if parent_fact else None,
-            child_fact=fact.child_fact if fact else None,
+            child_fact=fact.child_fact,
             child_multiplier=fact.child_multiplier,
         )
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
             Fact("mm", None, None),
             Fact("km", "m", 1000),
             Fact("hr", "min", 60),
-            Fact("min", "sec", 60)
+            Fact("min", "sec", 60),
         ]
     )
     result = linked_facts_list.crawl(start, end, m) or "not convertible"
