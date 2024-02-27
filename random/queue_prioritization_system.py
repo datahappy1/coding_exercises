@@ -43,14 +43,14 @@ class QueuePrioritizationSystem:
             queue_type.value(),
         )
 
-    def _get_queue_by_priority(self, priority: Priority) -> QueueType:
+    def _get_queue_by_priority(self, priority: Priority) -> QueueType.value:
         return self.__getattribute__(
             QueuePrioritizationSystem.priority_to_queue_name(
                 priority_name=priority.name
             )
         )
 
-    def _get_highest_priority_queue(self) -> Optional[QueueType]:
+    def _get_highest_priority_queue(self) -> Optional[QueueType.value]:
         for priority in self._sorted_priorities:
             _queue_ref = self._get_queue_by_priority(priority=priority)
             if not _queue_ref.empty():
