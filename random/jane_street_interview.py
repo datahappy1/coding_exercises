@@ -65,7 +65,11 @@ class Facts:
         return return_value
 
     def crawl(self, __from, __to, val):
-        return self._crawl_up(__from, __to, val) or self._crawl_down(__from, __to, val) or "not convertible"
+        return (
+            self._crawl_up(__from, __to, val)
+            or self._crawl_down(__from, __to, val)
+            or "not convertible"
+        )
 
 
 def parse_query(query_param: str) -> Tuple[str, str, int]:
@@ -90,12 +94,7 @@ if __name__ == "__main__":
     facts.double_link_facts()
     # print(facts.__dict__)
 
-    queries = [
-        "1 hr = ? sec",
-        "2 m = ? in",
-        "13 in = ? m",
-        "13 in = ? hr"
-    ]
+    queries = ["1 hr = ? sec", "2 m = ? in", "13 in = ? m", "13 in = ? hr"]
     for query in queries:
         start, end, source_value = parse_query(query)
         result = facts.crawl(start, end, source_value)
