@@ -59,7 +59,7 @@ class Facts:
             try:
                 anchor_fact = self.__getattribute__(anchor_fact["child"])
             except AttributeError:
-                # if we reach child that is not declared in the facts (sec.)
+                # if we ever reach child that is not declared in the facts
                 return None
 
         return return_value
