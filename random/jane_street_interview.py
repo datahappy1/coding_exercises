@@ -9,55 +9,75 @@ example queries:
 13 in = ? m --> answer = 0.330 (roughly)
 13 in = ? hr --> "not convertible"
 """
-from typing import Tuple
+from typing import Tuple, Optional
+
+
+class Fact:
+    def __init__(
+        self,
+        name: str,
+        child: Optional[str],
+        child_multiplier: Optional[float],
+        parent: Optional[str] = None,
+        parent_divider: Optional[float] = None,
+    ):
+        self.name: str = name
+        self.child: str = child
+        self.child_multiplier: float = child_multiplier
+        self.parent: Optional[str] = parent
+        self.parent_divider: Optional[float] = parent_divider
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class Facts:
-    def register_fact(self, fact):
-        self.__setattr__(fact["name"], fact)
+    def register_fact(self, fact: Fact):
+        self.__setattr__(fact.name, fact)
 
     def double_link_facts(self):
         for attr_name, attr_value in self.__dict__.items():
-            child_attr = self.__dict__.get(attr_value["child"])
-            if not child_attr:  # fact without a child ( mm, sec. etc )
+            _child = self.__dict__.get(attr_value.child)
+            if not _child:  # fact without a child ( mm, sec. etc )
                 continue
-            child_attr["parent"] = attr_name
-            child_attr["parent_divider"] = 1 / attr_value["child_multiplier"]
-            self.__dict__[attr_value["child"]].update(child_attr)
 
-    def _crawl_up(self, __from, __to, __source_value):
+            _child.parent = attr_name
+            _child.parent_divider = 1 / attr_value.child_multiplier
+            self.__dict__[attr_value.child] = _child
+
+    def _crawl_up(self, __from: str, __to: str, __source_value: int):
         anchor_fact = self.__getattribute__(__from)
         return_value = __source_value
 
-        if anchor_fact.get("parent") is None:
+        if anchor_fact.parent is None:
             return None  # no need to loop to crawl up if we're at the top fact in the hierarchy
 
-        while anchor_fact["name"] != __to:
-            if anchor_fact.get("parent") is None:
+        while anchor_fact.name != __to:
+            if anchor_fact.parent is None:
                 # reached the top fact in hierarchy without reaching the __to
                 return None
 
-            return_value *= anchor_fact["parent_divider"]
-            anchor_fact = self.__getattribute__(anchor_fact["parent"])
+            return_value *= anchor_fact.parent_divider
+            anchor_fact = self.__getattribute__(anchor_fact.parent)
 
         return return_value
 
-    def _crawl_down(self, __from, __to, __source_value):
+    def _crawl_down(self, __from: str, __to: str, __source_value: int):
         anchor_fact = self.__getattribute__(__from)
         return_value = __source_value
 
-        if anchor_fact.get("child") is None:
+        if anchor_fact.child is None:
             # no need to loop to crawl down if we're at the bottom fact in the hierarchy
             return None
 
-        while anchor_fact["name"] != __to:
-            if anchor_fact.get("child") is None:
+        while anchor_fact.name != __to:
+            if anchor_fact.child is None:
                 # reached the bottom fact in hierarchy without reaching the __to
                 return None
 
-            return_value *= anchor_fact["child_multiplier"]
+            return_value *= anchor_fact.child_multiplier
             try:
-                anchor_fact = self.__getattribute__(anchor_fact["child"])
+                anchor_fact = self.__getattribute__(anchor_fact.child)
             except AttributeError:
                 # if we ever reach child that is not declared in the facts
                 return None
@@ -83,14 +103,14 @@ def parse_query(query_param: str) -> Tuple[str, str, int]:
 
 if __name__ == "__main__":
     facts = Facts()
-    facts.register_fact({"name": "m", "child": "ft", "child_multiplier": 3.28}),
-    facts.register_fact({"name": "ft", "child": "in", "child_multiplier": 12}),
-    facts.register_fact({"name": "in", "child": "mm", "child_multiplier": 25}),
-    facts.register_fact({"name": "mm", "child": None, "child_multiplier": None}),
-    facts.register_fact({"name": "sec", "child": None, "child_multiplier": None}),
-    facts.register_fact({"name": "km", "child": "m", "child_multiplier": 1000}),
-    facts.register_fact({"name": "hr", "child": "min", "child_multiplier": 60}),
-    facts.register_fact({"name": "min", "child": "sec", "child_multiplier": 60}),
+    facts.register_fact(Fact(name="m", child="ft", child_multiplier=3.28)),
+    facts.register_fact(Fact(name="ft", child="in", child_multiplier=12)),
+    facts.register_fact(Fact(name="in", child="mm", child_multiplier=25)),
+    facts.register_fact(Fact(name="mm", child=None, child_multiplier=None)),
+    facts.register_fact(Fact(name="sec", child=None, child_multiplier=None)),
+    facts.register_fact(Fact(name="km", child="m", child_multiplier=1000)),
+    facts.register_fact(Fact(name="hr", child="min", child_multiplier=60)),
+    facts.register_fact(Fact(name="min", child="sec", child_multiplier=60)),
     facts.double_link_facts()
     # print(facts.__dict__)
 
