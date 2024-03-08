@@ -9,7 +9,7 @@ example queries:
 13 in = ? m --> answer = 0.330 (roughly)
 13 in = ? hr --> "not convertible"
 """
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
 
 class Fact:
@@ -32,21 +32,27 @@ class Fact:
 
 
 class Facts:
-    def register_fact(self, fact: Fact):
-        self.__setattr__(fact.name, fact)
+    def __init__(self):
+        self._are_facts_double_linked: bool = False
+        self._facts: Dict[str, Fact] = dict()
 
-    def double_link_facts(self):
-        for attr_name, attr_value in self.__dict__.items():
-            _child = self.__dict__.get(attr_value.child)
+    def register_fact(self, fact: Fact):
+        self._facts[fact.name] = fact
+
+    def _double_link_facts(self):
+        for attr_name, attr_value in self._facts.items():
+            _child = self._facts.get(attr_value.child)
             if not _child:  # fact without a child ( mm, sec. etc )
                 continue
 
             _child.parent = attr_name
             _child.parent_divider = 1 / attr_value.child_multiplier
-            self.__dict__[attr_value.child] = _child
+            self._facts[attr_value.child] = _child
+
+        self._are_facts_double_linked = True
 
     def _crawl_up(self, __from: str, __to: str, __source_value: int):
-        anchor_fact = self.__getattribute__(__from)
+        anchor_fact = self._facts.get(__from)
         return_value = __source_value
 
         if anchor_fact.parent is None:
@@ -58,12 +64,12 @@ class Facts:
                 return None
 
             return_value *= anchor_fact.parent_divider
-            anchor_fact = self.__getattribute__(anchor_fact.parent)
+            anchor_fact = self._facts.get(anchor_fact.parent)
 
         return return_value
 
     def _crawl_down(self, __from: str, __to: str, __source_value: int):
-        anchor_fact = self.__getattribute__(__from)
+        anchor_fact = self._facts.get(__from)
         return_value = __source_value
 
         if anchor_fact.child is None:
@@ -77,7 +83,7 @@ class Facts:
 
             return_value *= anchor_fact.child_multiplier
             try:
-                anchor_fact = self.__getattribute__(anchor_fact.child)
+                anchor_fact = self._facts.get(anchor_fact.child)
             except AttributeError:
                 # if we ever reach child that is not declared in the facts
                 return None
@@ -85,6 +91,9 @@ class Facts:
         return return_value
 
     def crawl(self, __from, __to, val):
+        if self._are_facts_double_linked is False:
+            self._double_link_facts()
+
         return (
             self._crawl_up(__from, __to, val)
             or self._crawl_down(__from, __to, val)
@@ -111,11 +120,11 @@ if __name__ == "__main__":
     facts.register_fact(Fact(name="km", child="m", child_multiplier=1000)),
     facts.register_fact(Fact(name="hr", child="min", child_multiplier=60)),
     facts.register_fact(Fact(name="min", child="sec", child_multiplier=60)),
-    facts.double_link_facts()
-    # print(facts.__dict__)
 
     queries = ["1 hr = ? sec", "2 m = ? in", "13 in = ? m", "13 in = ? hr"]
     for query in queries:
         start, end, source_value = parse_query(query)
         result = facts.crawl(start, end, source_value)
         print(f"{query} => {result}")
+
+    # print(facts.__dict__)
