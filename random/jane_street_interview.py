@@ -23,9 +23,15 @@ class Fact:
     ):
         self.name: str = name
         self.child: str = child
-        self.child_multiplier: float = child_multiplier
+        self.child_multiplier: float = self._validate_not_zero(child_multiplier)
         self.parent: Optional[str] = parent
-        self.parent_divider: Optional[float] = parent_divider
+        self.parent_divider: Optional[float] = self._validate_not_zero(parent_divider)
+
+    @staticmethod
+    def _validate_not_zero(value):
+        if value != 0:
+            return value
+        raise ValueError("value cannot be zero")
 
     def __repr__(self):
         return str(self.__dict__)
@@ -33,13 +39,12 @@ class Fact:
 
 class Facts:
     def __init__(self):
-        self._are_facts_double_linked: bool = False
         self._facts: Dict[str, Fact] = dict()
 
     def register_fact(self, fact: Fact):
         self._facts[fact.name] = fact
 
-    def _double_link_facts(self):
+    def double_link_facts(self):
         for attr_name, attr_value in self._facts.items():
             _child = self._facts.get(attr_value.child)
             if not _child:  # fact without a child ( mm, sec. etc )
@@ -48,8 +53,6 @@ class Facts:
             _child.parent = attr_name
             _child.parent_divider = 1 / attr_value.child_multiplier
             self._facts[attr_value.child] = _child
-
-        self._are_facts_double_linked = True
 
     def _crawl_up(self, __from: str, __to: str, __source_value: int):
         anchor_fact = self._facts.get(__from)
@@ -91,9 +94,6 @@ class Facts:
         return return_value
 
     def crawl(self, __from, __to, val):
-        if self._are_facts_double_linked is False:
-            self._double_link_facts()
-
         return (
             self._crawl_up(__from, __to, val)
             or self._crawl_down(__from, __to, val)
@@ -120,11 +120,11 @@ if __name__ == "__main__":
     facts.register_fact(Fact(name="km", child="m", child_multiplier=1000)),
     facts.register_fact(Fact(name="hr", child="min", child_multiplier=60)),
     facts.register_fact(Fact(name="min", child="sec", child_multiplier=60)),
+    facts.double_link_facts()
+    # print(facts.__dict__)
 
     queries = ["1 hr = ? sec", "2 m = ? in", "13 in = ? m", "13 in = ? hr"]
     for query in queries:
         start, end, source_value = parse_query(query)
         result = facts.crawl(start, end, source_value)
         print(f"{query} => {result}")
-
-    # print(facts.__dict__)
