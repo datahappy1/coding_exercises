@@ -19,7 +19,7 @@ def get_smallest_pos_int(input_arr: List[int]) -> int:
     # eval len until changed
     # return found value
     unique_input = set(input_arr)
-    unique_input_initial_len, unique_input_min_val = len(unique_input), min(unique_input)
+    unique_input_initial_len = len(unique_input)
     next_value = 0
     while unique_input_initial_len == len(unique_input):
         next_value += 1
