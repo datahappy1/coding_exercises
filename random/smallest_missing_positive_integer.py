@@ -15,20 +15,20 @@ from typing import List
 def get_smallest_pos_int(input_arr: List[int]) -> int:
     # unique
     # get min value
-    # insert into set value > min
+    # add to unique set value min value +1
     # eval len until changed
     # return found value
     unique_input = set(input_arr)
     unique_input_initial_len, unique_input_min_val = len(unique_input), min(unique_input)
-    next_value = 0 if unique_input_min_val < 0 else unique_input_min_val
-    while len(unique_input) == unique_input_initial_len:
+    next_value = 0
+    while unique_input_initial_len == len(unique_input):
         next_value += 1
         unique_input.add(next_value)
     return next_value
 
 
-print(get_smallest_pos_int(input_arr=[1, 2, 3, 4, 5]))
+print(get_smallest_pos_int(input_arr=[1, 3, 6, 4, 1, 2]))
+print(get_smallest_pos_int(input_arr=[1, 2, 3]))
 print(get_smallest_pos_int(input_arr=[-1, -3]))
 large_arr = [x for x in range(-100000, 100000)]
-# print(large_arr)
 print(get_smallest_pos_int(input_arr=large_arr))
