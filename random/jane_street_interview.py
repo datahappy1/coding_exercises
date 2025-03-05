@@ -121,7 +121,6 @@ if __name__ == "__main__":
     facts.register_fact(Fact(name="hr", child="min", child_multiplier=60)),
     facts.register_fact(Fact(name="min", child="sec", child_multiplier=60)),
     facts.double_link_facts()
-    # print(facts.__dict__)
 
     queries = ["1 hr = ? sec", "2 m = ? in", "13 in = ? m", "13 in = ? hr"]
     for query in queries:
